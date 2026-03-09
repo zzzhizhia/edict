@@ -1,7 +1,7 @@
-"""Agent Runner — 封装 Claude Agent SDK，流式事件桥接到 EventBus。
+"""Agent Runner — 封装 Claude Agent SDK，执行 Agent 调用。
 
 替代旧的 subprocess.run(['claude', '-p', '--agent', ...]) 调用方式，
-提供实时事件流、优雅取消、精确 token 追踪。
+提供优雅取消、精确 token 追踪。
 """
 
 import asyncio
@@ -13,7 +13,6 @@ from dataclasses import dataclass
 
 from ..config import get_settings
 from .agent_config_loader import AgentConfigLoader
-from .event_bus import EventBus, TOPIC_AGENT_THOUGHTS
 from .usage_tracker import UsageTracker, UsageRecord
 
 log = logging.getLogger("edict.agent_runner")
@@ -66,10 +65,9 @@ class _ActiveSession:
 
 
 class AgentRunner:
-    """Agent 执行引擎 — 管理所有活跃 Agent 会话，流式事件桥接到 EventBus。"""
+    """Agent 执行引擎 — 管理所有活跃 Agent 会话。"""
 
-    def __init__(self, event_bus: EventBus, usage_tracker: UsageTracker, config=None):
-        self._bus = event_bus
+    def __init__(self, usage_tracker: UsageTracker, config=None):
         self._usage = usage_tracker
         self._config = config or get_settings()
         self._semaphore = asyncio.Semaphore(self._config.agent_sdk_max_concurrent)
@@ -84,7 +82,7 @@ class AgentRunner:
         trace_id: str,
         timeout: int = 300,
     ) -> AgentResult:
-        """执行 Agent 调用，流式事件实时推送到 EventBus。"""
+        """执行 Agent 调用。"""
         session_key = f"{agent_id}:{task_id}"
 
         async with self._semaphore:
@@ -149,8 +147,7 @@ class AgentRunner:
             max_budget_usd=agent_cfg.max_budget_usd,
         )
 
-        # Inject task context into system prompt (not os.environ, to avoid
-        # concurrent session cross-contamination)
+        # Inject task context into system prompt
         task_context = (
             f"\n\n[EDICT_CONTEXT]\n"
             f"EDICT_TASK_ID={session.task_id}\n"
@@ -170,51 +167,12 @@ class AgentRunner:
                 event = msg.event
                 event_type = event.get("type", "")
 
-                # Bridge streaming events to EventBus
                 if event_type == "content_block_delta":
                     delta = event.get("delta", {})
                     if delta.get("type") == "text_delta":
                         text = delta.get("text", "")
                         if text:
                             output_parts.append(text)
-                            await self._bus.publish(
-                                topic=TOPIC_AGENT_THOUGHTS,
-                                trace_id=session.trace_id,
-                                event_type="agent.text_delta",
-                                producer=f"agent.{session.agent_id}",
-                                payload={
-                                    "task_id": session.task_id,
-                                    "agent": session.agent_id,
-                                    "text": text,
-                                },
-                            )
-                    elif delta.get("type") == "thinking_delta":
-                        await self._bus.publish(
-                            topic=TOPIC_AGENT_THOUGHTS,
-                            trace_id=session.trace_id,
-                            event_type="agent.thinking",
-                            producer=f"agent.{session.agent_id}",
-                            payload={
-                                "task_id": session.task_id,
-                                "agent": session.agent_id,
-                                "text": delta.get("thinking", ""),
-                            },
-                        )
-
-                elif event_type == "content_block_start":
-                    content_block = event.get("content_block", {})
-                    if content_block.get("type") == "tool_use":
-                        await self._bus.publish(
-                            topic=TOPIC_AGENT_THOUGHTS,
-                            trace_id=session.trace_id,
-                            event_type="agent.tool_use",
-                            producer=f"agent.{session.agent_id}",
-                            payload={
-                                "task_id": session.task_id,
-                                "agent": session.agent_id,
-                                "tool": content_block.get("name", ""),
-                            },
-                        )
 
             elif isinstance(msg, _ResultMessage):
                 usage = msg.usage or {}
@@ -286,7 +244,7 @@ class AgentRunner:
         return False
 
     def is_active(self, agent_id: str) -> bool:
-        """检查 Agent 是否有活跃会话（替代 pgrep）。"""
+        """检查 Agent 是否有活跃会话。"""
         return any(s.agent_id == agent_id for s in self._active.values())
 
     def list_active(self) -> list[dict]:
