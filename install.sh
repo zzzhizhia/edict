@@ -128,7 +128,9 @@ init_data() {
       echo '{}' > "$REPO_DIR/data/$f"
     fi
   done
-  echo '[]' > "$REPO_DIR/data/pending_model_changes.json"
+  if [ ! -f "$REPO_DIR/data/pending_model_changes.json" ]; then
+    echo '[]' > "$REPO_DIR/data/pending_model_changes.json"
+  fi
 
   # 初始任务文件
   if [ ! -f "$REPO_DIR/data/tasks_source.json" ]; then
@@ -193,7 +195,27 @@ build_frontend() {
   fi
 }
 
-# ── Step 5: 首次数据同步 ────────────────────────────────────
+# ── Step 5: 安装 Skill ──────────────────────────────────────
+install_skill() {
+  info "安装 edict skill 到 ~/.claude/skills/edict/ ..."
+
+  SKILL_SRC="$REPO_DIR/skills/edict"
+  SKILL_DST="$CLAUDE_HOME/skills/edict"
+
+  if [ -d "$SKILL_SRC" ]; then
+    mkdir -p "$SKILL_DST"
+    if [ -f "$SKILL_DST/SKILL.md" ]; then
+      cp "$SKILL_DST/SKILL.md" "$SKILL_DST/SKILL.md.bak.$(date +%Y%m%d-%H%M%S)"
+      warn "已备份旧 skill → SKILL.md.bak.*"
+    fi
+    cp "$SKILL_SRC/SKILL.md" "$SKILL_DST/SKILL.md"
+    log "Skill 已安装: ~/.claude/skills/edict/SKILL.md"
+  else
+    warn "未找到 skills/edict/，跳过 skill 安装"
+  fi
+}
+
+# ── Step 6: 首次数据同步 ────────────────────────────────────
 first_sync() {
   info "执行首次数据同步..."
   cd "$REPO_DIR"
@@ -212,6 +234,7 @@ create_workspaces
 register_agents
 init_data
 build_frontend
+install_skill
 first_sync
 
 echo ""
@@ -220,8 +243,8 @@ echo -e "${GREEN}║  🎉  三省六部安装完成！                         
 echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
 echo ""
 echo "下一步："
-echo "  1. 启动数据刷新循环:  bash scripts/run_loop.sh &"
-echo "  2. 启动看板服务器:    python3 dashboard/server.py"
-echo "  3. 打开看板:          http://127.0.0.1:17891"
+echo "  1. 一键启动服务:      make start"
+echo "  2. 打开看板:          http://127.0.0.1:17891"
+echo "  3. 查看状态:          make status"
 echo ""
 info "文档: docs/getting-started.md"
