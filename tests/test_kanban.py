@@ -1,8 +1,8 @@
 """tests for scripts/kanban_update.py"""
-import json, pathlib, sys
+import json, pathlib, sys, os
 
-# Ensure scripts/ is importable
-SCRIPTS = pathlib.Path(__file__).resolve().parent.parent / 'scripts'
+# Ensure scripts/ is importable (EDICT_HOME or fallback to repo/scripts)
+SCRIPTS = pathlib.Path(os.environ.get('EDICT_HOME', pathlib.Path(__file__).resolve().parent.parent)) / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
 
 import kanban_update as kb

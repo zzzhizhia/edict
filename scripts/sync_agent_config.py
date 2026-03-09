@@ -3,15 +3,15 @@
 同步 agent 配置 → data/agent_config.json
 基于 ID_LABEL 静态映射生成 agent 配置，支持自动发现 Skills 目录
 """
-import json, pathlib, datetime, logging
+import json, pathlib, datetime, logging, os
 from file_lock import atomic_json_write
+from edict_paths import DATA
 
 log = logging.getLogger('sync_agent_config')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')
 
-# Auto-detect project root (parent of scripts/)
-BASE = pathlib.Path(__file__).parent.parent
-DATA = BASE / 'data'
+# REPO_DIR is set by install.sh for deploy_agent_files(); at runtime it may not exist
+REPO_DIR = pathlib.Path(os.environ.get('REPO_DIR', pathlib.Path(__file__).resolve().parent.parent))
 CLAUDE_AGENTS_DIR = pathlib.Path.home() / '.claude' / 'agents' / 'edict'
 
 ID_LABEL = {
@@ -126,7 +126,7 @@ _SOUL_DEPLOY_MAP = {
 
 def deploy_agent_files():
     """将项目 agents/<name>.md 部署到 ~/.claude/agents/edict/<name>.md"""
-    agents_dir = BASE / 'agents'
+    agents_dir = REPO_DIR / 'agents'
     CLAUDE_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     deployed = 0
     for proj_name, runtime_id in _SOUL_DEPLOY_MAP.items():

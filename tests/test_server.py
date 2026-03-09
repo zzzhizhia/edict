@@ -1,11 +1,12 @@
 """tests for dashboard/server.py route handling"""
-import json, pathlib, sys, threading, time
+import json, pathlib, sys, threading, time, os
 from http.client import HTTPConnection
 
 # Add project paths
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+_SCRIPTS = pathlib.Path(os.environ.get('EDICT_HOME', ROOT)) / 'scripts'
 sys.path.insert(0, str(ROOT / 'dashboard'))
-sys.path.insert(0, str(ROOT / 'scripts'))
+sys.path.insert(0, str(_SCRIPTS))
 
 
 def test_healthz(tmp_path):

@@ -6,6 +6,8 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_HOME="$HOME/.claude"
+EDICT_HOME="$CLAUDE_HOME/edict"
+export EDICT_HOME
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
@@ -116,26 +118,42 @@ register_agents() {
   fi
 }
 
-# ── Step 3: 初始化 Data ─────────────────────────────────────
+# ── Step 3: 安装脚本到 EDICT_HOME ──────────────────────────
+install_scripts() {
+  info "安装脚本到 $EDICT_HOME/scripts/ ..."
+
+  mkdir -p "$EDICT_HOME/scripts"
+
+  # 复制所有 Python 脚本和 Shell 脚本
+  for f in "$REPO_DIR"/scripts/*.py "$REPO_DIR"/scripts/*.sh; do
+    if [ -f "$f" ]; then
+      cp "$f" "$EDICT_HOME/scripts/"
+    fi
+  done
+
+  log "脚本已安装到: $EDICT_HOME/scripts/"
+}
+
+# ── Step 4: 初始化 Data ─────────────────────────────────────
 init_data() {
   info "初始化数据目录..."
 
-  mkdir -p "$REPO_DIR/data" "$REPO_DIR/data/outputs"
+  mkdir -p "$EDICT_HOME/data" "$EDICT_HOME/data/outputs"
 
   # 初始化空文件
   for f in live_status.json agent_config.json model_change_log.json; do
-    if [ ! -f "$REPO_DIR/data/$f" ]; then
-      echo '{}' > "$REPO_DIR/data/$f"
+    if [ ! -f "$EDICT_HOME/data/$f" ]; then
+      echo '{}' > "$EDICT_HOME/data/$f"
     fi
   done
-  if [ ! -f "$REPO_DIR/data/pending_model_changes.json" ]; then
-    echo '[]' > "$REPO_DIR/data/pending_model_changes.json"
+  if [ ! -f "$EDICT_HOME/data/pending_model_changes.json" ]; then
+    echo '[]' > "$EDICT_HOME/data/pending_model_changes.json"
   fi
 
   # 初始任务文件
-  if [ ! -f "$REPO_DIR/data/tasks_source.json" ]; then
-    python3 << 'PYEOF'
-import json, pathlib
+  if [ ! -f "$EDICT_HOME/data/tasks_source.json" ]; then
+    EDICT_HOME="$EDICT_HOME" python3 << 'PYEOF'
+import json, pathlib, os
 tasks = [
     {
         "id": "JJC-DEMO-001",
@@ -157,17 +175,14 @@ tasks = [
         ]
     }
 ]
-p = pathlib.Path(__file__).parent if '__file__' in dir() else pathlib.Path('.')
-# Write to data dir
-import os
-data_dir = pathlib.Path(os.environ.get('REPO_DIR', '.')) / 'data'
-data_dir.mkdir(exist_ok=True)
+data_dir = pathlib.Path(os.environ.get('EDICT_HOME', pathlib.Path.home() / '.claude' / 'edict')) / 'data'
+data_dir.mkdir(parents=True, exist_ok=True)
 (data_dir / 'tasks_source.json').write_text(json.dumps(tasks, ensure_ascii=False, indent=2))
 print('tasks_source.json 已初始化')
 PYEOF
   fi
 
-  log "数据目录初始化完成: $REPO_DIR/data"
+  log "数据目录初始化完成: $EDICT_HOME/data"
 }
 
 # ── Step 4: 构建前端 ──────────────────────────────────────────
@@ -217,13 +232,13 @@ install_skill() {
   done
 }
 
-# ── Step 6: 首次数据同步 ────────────────────────────────────
+# ── Step 7: 首次数据同步 ────────────────────────────────────
 first_sync() {
   info "执行首次数据同步..."
   cd "$REPO_DIR"
 
-  REPO_DIR="$REPO_DIR" python3 scripts/sync_agent_config.py || warn "sync_agent_config 有警告"
-  python3 scripts/refresh_live_data.py || warn "refresh_live_data 有警告"
+  EDICT_HOME="$EDICT_HOME" REPO_DIR="$REPO_DIR" python3 "$EDICT_HOME/scripts/sync_agent_config.py" || warn "sync_agent_config 有警告"
+  EDICT_HOME="$EDICT_HOME" python3 "$EDICT_HOME/scripts/refresh_live_data.py" || warn "refresh_live_data 有警告"
 
   log "首次同步完成"
 }
@@ -234,6 +249,7 @@ check_deps
 backup_existing
 create_workspaces
 register_agents
+install_scripts
 init_data
 build_frontend
 install_skill

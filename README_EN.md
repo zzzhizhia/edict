@@ -214,7 +214,7 @@ The installer automatically:
 
 ```bash
 # Terminal 1: Data sync loop (every 15s)
-bash scripts/run_loop.sh
+bash $EDICT_HOME/scripts/run_loop.sh
 
 # Terminal 2: Dashboard server
 python3 dashboard/server.py
@@ -318,12 +318,15 @@ edict/
 │   ├── dashboard.html          # Dashboard (single file, zero deps, works out of the box)
 │   ├── dist/                   # Pre-built React frontend (included in Docker image)
 │   └── server.py               # API server (stdlib, zero deps)
-├── scripts/                    # Data sync & automation scripts
+├── scripts/                    # Source scripts (copied to ~/.claude/edict/scripts/ on install)
+│   ├── edict_paths.py          #   Unified path module (EDICT_HOME env var)
 │   ├── kanban_update.py        #   Kanban CLI with data sanitization (~300 lines)
 │   └── ...                     #   fetch_morning_news, sync, screenshots, etc.
 ├── tests/                      # E2E tests
 │   └── test_e2e_kanban.py      #   Kanban sanitization tests (17 assertions)
-├── data/                       # Runtime data (gitignored)
+├── ~/.claude/edict/            # Runtime directory (EDICT_HOME)
+│   ├── data/                   #   Runtime data
+│   └── scripts/                #   Installed scripts
 ├── docs/                       # Documentation + screenshots
 ├── install.sh                  # One-click installer
 └── LICENSE                     # MIT

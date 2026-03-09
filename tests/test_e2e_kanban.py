@@ -6,7 +6,7 @@
 import sys, os, json, pathlib, pytest
 
 # 切换到 scripts 目录（file_lock 依赖）
-_SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'scripts')
+_SCRIPTS_DIR = str(pathlib.Path(os.environ.get('EDICT_HOME', pathlib.Path(__file__).resolve().parent.parent)) / 'scripts')
 os.chdir(_SCRIPTS_DIR)
 sys.path.insert(0, '.')
 

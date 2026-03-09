@@ -417,11 +417,11 @@ edict/
 │   ├── dashboard.html          # 军机处看板（单文件 · 零依赖 · ~2500 行）
 │   ├── dist/                   # React 前端构建产物（Docker 镜像内包含，本地可选）
 │   └── server.py               # API 服务器（Python 标准库 · 零依赖 · ~1200 行）
-├── scripts/
+├── scripts/                    # 源码（install 时复制到 ~/.claude/edict/scripts/）
+│   ├── edict_paths.py          # 统一路径模块（EDICT_HOME 环境变量）
 │   ├── run_loop.sh             # 数据刷新循环（每 15 秒）
 │   ├── kanban_update.py        # 看板 CLI（含旨意数据清洗 + 标题校验）
 │   ├── skill_manager.py        # Skill 管理工具（远程/本地 Skills 添加、更新、移除）
-│   ├── sync_from_claude_runtime.py
 │   ├── sync_agent_config.py
 │   ├── sync_officials_stats.py
 │   ├── fetch_morning_news.py
@@ -430,7 +430,9 @@ edict/
 │   └── file_lock.py            # 文件锁（防多 Agent 并发写入）
 ├── tests/
 │   └── test_e2e_kanban.py      # 端到端测试（17 个断言）
-├── data/                       # 运行时数据（gitignored）
+├── ~/.claude/edict/            # 运行时目录（EDICT_HOME）
+│   ├── data/                   # 运行时数据
+│   └── scripts/                # install 时从 repo 复制
 ├── docs/
 │   ├── task-dispatch-architecture.md  # 📚 详细架构文档：任务分发、流转、调度的完整设计（业务+技术）
 │   ├── getting-started.md             # 快速上手指南
@@ -494,21 +496,21 @@ edict/
 
 ```bash
 # 从 GitHub 添加 code_review skill 到中书省
-python3 scripts/skill_manager.py add-remote \
+python3 $EDICT_HOME/scripts/skill_manager.py add-remote \
   --agent zhongshu \
   --name code_review \
   --source https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md \
   --description "代码审查技能"
 
 # 一键导入官方 skills 库到指定 agents
-python3 scripts/skill_manager.py import-official-hub \
+python3 $EDICT_HOME/scripts/skill_manager.py import-official-hub \
   --agents zhongshu,menxia,shangshu,bingbu,xingbu
 
 # 列出所有已添加的远程 skills
-python3 scripts/skill_manager.py list-remote
+python3 $EDICT_HOME/scripts/skill_manager.py list-remote
 
 # 更新某个 skill 到最新版本
-python3 scripts/skill_manager.py update-remote \
+python3 $EDICT_HOME/scripts/skill_manager.py update-remote \
   --agent zhongshu \
   --name code_review
 ```
@@ -642,7 +644,7 @@ docker compose up
 <details>
 <summary><b>❌ Skill 下载失败</b></summary>
 
-**症状**：`python3 scripts/skill_manager.py import-official-hub` 报错。
+**症状**：`python3 $EDICT_HOME/scripts/skill_manager.py import-official-hub` 报错。
 
 **排查**：
 ```bash
@@ -651,7 +653,7 @@ curl -I https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/S
 
 # 如果超时，使用代理
 export https_proxy=http://your-proxy:port
-python3 scripts/skill_manager.py import-official-hub --agents zhongshu
+python3 $EDICT_HOME/scripts/skill_manager.py import-official-hub --agents zhongshu
 ```
 
 **常见原因**：

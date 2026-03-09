@@ -26,10 +26,10 @@
   python3 kanban_update.py progress JJC-20260223-012 "正在分析需求，拟定3个子方案" "1.调研技术选型|2.撰写设计文档|3.实现原型"
 """
 import json, pathlib, datetime, sys, subprocess, logging, os, re, urllib.request
+from edict_paths import DATA, SCRIPTS
 
-_BASE = pathlib.Path(__file__).resolve().parent.parent
-TASKS_FILE = _BASE / 'data' / 'tasks_source.json'
-REFRESH_SCRIPT = _BASE / 'scripts' / 'refresh_live_data.py'
+TASKS_FILE = DATA / 'tasks_source.json'
+REFRESH_SCRIPT = SCRIPTS / 'refresh_live_data.py'
 _DASHBOARD_URL = os.environ.get('EDICT_DASHBOARD_URL', 'http://127.0.0.1:17891')
 
 log = logging.getLogger('kanban')
@@ -287,7 +287,7 @@ def cmd_done(task_id, output_path='', summary=''):
         pass
 
     if stdin_content:
-        outputs_dir = _BASE / 'data' / 'outputs'
+        outputs_dir = DATA / 'outputs'
         outputs_dir.mkdir(parents=True, exist_ok=True)
         output_file = outputs_dir / f'{task_id}.md'
         output_file.write_text(stdin_content, encoding='utf-8')

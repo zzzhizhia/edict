@@ -1,8 +1,8 @@
 """tests for scripts/file_lock.py"""
 import json, pathlib, tempfile, os, sys
 
-# Ensure scripts/ is importable
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / 'scripts'))
+# Ensure scripts/ is importable (EDICT_HOME or fallback to repo/scripts)
+sys.path.insert(0, str(pathlib.Path(os.environ.get('EDICT_HOME', pathlib.Path(__file__).resolve().parent.parent)) / 'scripts'))
 
 from file_lock import atomic_json_read, atomic_json_write, atomic_json_update
 

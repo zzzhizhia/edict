@@ -7,12 +7,10 @@
 """
 import json, pathlib, datetime, logging
 from file_lock import atomic_json_write
+from edict_paths import DATA
 
 log = logging.getLogger('officials')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')
-
-BASE = pathlib.Path(__file__).resolve().parent.parent
-DATA = BASE / 'data'
 USAGE_LOG = DATA / 'usage_log.jsonl'
 AGENTS_ROOT = pathlib.Path.home() / '.claude' / 'projects'
 CLAUDE_SETTINGS = pathlib.Path.home() / '.claude' / 'settings.json'

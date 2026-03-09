@@ -2,13 +2,14 @@
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 log = logging.getLogger("edict.usage")
 
-DATA_DIR = Path(__file__).resolve().parents[4] / "data"
+DATA_DIR = Path(os.environ.get('EDICT_HOME', Path.home() / '.claude' / 'edict')) / 'data'
 USAGE_LOG = DATA_DIR / "usage_log.jsonl"
 
 

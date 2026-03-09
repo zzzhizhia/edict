@@ -3,6 +3,7 @@
 BACKEND_PORT ?= 8000
 DASHBOARD_PORT ?= 17891
 ROOT_DIR := $(shell pwd)
+EDICT_HOME ?= $(HOME)/.claude/edict
 LOG_DIR := $(ROOT_DIR)/logs
 PYTHON := $(ROOT_DIR)/.venv/bin/python3
 
@@ -41,7 +42,7 @@ dashboard:
 		echo "⏭️  Dashboard 已在运行 (tmux: $(S_DASHBOARD))"; \
 	else \
 		tmux new-session -d -s $(S_DASHBOARD) \
-			"cd $(ROOT_DIR) && $(PYTHON) dashboard/server.py --port $(DASHBOARD_PORT) 2>&1 | tee -a $(LOG_DIR)/dashboard.log"; \
+			"cd $(ROOT_DIR) && EDICT_HOME=$(EDICT_HOME) $(PYTHON) dashboard/server.py --port $(DASHBOARD_PORT) 2>&1 | tee -a $(LOG_DIR)/dashboard.log"; \
 		echo "✅ Dashboard 启动 (tmux: $(S_DASHBOARD), port $(DASHBOARD_PORT))"; \
 	fi
 
@@ -51,7 +52,7 @@ loop:
 		echo "⏭️  Loop 已在运行 (tmux: $(S_LOOP))"; \
 	else \
 		tmux new-session -d -s $(S_LOOP) \
-			"cd $(ROOT_DIR) && bash scripts/run_loop.sh 2>&1 | tee -a $(LOG_DIR)/loop.log"; \
+			"cd $(ROOT_DIR) && EDICT_HOME=$(EDICT_HOME) bash $(EDICT_HOME)/scripts/run_loop.sh 2>&1 | tee -a $(LOG_DIR)/loop.log"; \
 		echo "✅ Loop 启动 (tmux: $(S_LOOP))"; \
 	fi
 

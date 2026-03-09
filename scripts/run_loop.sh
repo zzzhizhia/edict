@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${EDICT_HOME:-$HOME/.claude/edict}/scripts"
 INTERVAL="${1:-15}"
 LOG="/tmp/sansheng_liubu_refresh.log"
 MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB

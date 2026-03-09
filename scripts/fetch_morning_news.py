@@ -8,11 +8,10 @@ import json, pathlib, datetime, subprocess, re, sys, os, logging
 from xml.etree import ElementTree as ET
 from file_lock import atomic_json_write
 from utils import validate_url
+from edict_paths import DATA
 
 log = logging.getLogger('朝报')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')
-
-DATA = pathlib.Path(__file__).resolve().parent.parent / 'data'
 
 # ── RSS 源配置 ──────────────────────────────────────────────────────────
 FEEDS = {

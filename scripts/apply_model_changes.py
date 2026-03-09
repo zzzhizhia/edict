@@ -2,12 +2,10 @@
 """应用 data/pending_model_changes.json → claude code agent 配置"""
 import json, pathlib, datetime, shutil, logging, glob
 from file_lock import atomic_json_write, atomic_json_read
+from edict_paths import DATA
 
 log = logging.getLogger('model_change')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')
-
-BASE = pathlib.Path(__file__).parent.parent
-DATA = BASE / 'data'
 CLAUDE_SETTINGS = pathlib.Path.home() / '.claude' / 'settings.json'
 PENDING = DATA / 'pending_model_changes.json'
 CHANGE_LOG = DATA / 'model_change_log.json'

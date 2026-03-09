@@ -63,7 +63,7 @@ git push origin feat/my-awesome-feature
 ./install.sh
 
 # 启动数据刷新（后台运行）
-bash scripts/run_loop.sh &
+bash $EDICT_HOME/scripts/run_loop.sh &
 
 # 启动看板服务器
 python3 dashboard/server.py
@@ -153,14 +153,14 @@ docs: 更新 README 截图
 ```bash
 # 编译检查
 python3 -m py_compile dashboard/server.py
-python3 -m py_compile scripts/kanban_update.py
+python3 -m py_compile $EDICT_HOME/scripts/kanban_update.py
 
 # E2E 看板测试（9 场景 17 断言）
-python3 tests/test_e2e_kanban.py
+EDICT_HOME=~/.claude/edict python3 tests/test_e2e_kanban.py
 
 # 验证数据同步
-python3 scripts/refresh_live_data.py
-python3 scripts/sync_agent_config.py
+python3 $EDICT_HOME/scripts/refresh_live_data.py
+python3 $EDICT_HOME/scripts/sync_agent_config.py
 
 # 启动服务器验证 API
 python3 dashboard/server.py &

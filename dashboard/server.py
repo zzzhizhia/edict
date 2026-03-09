@@ -17,7 +17,8 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 # 引入文件锁工具，确保与其他脚本并发安全
-scripts_dir = str(pathlib.Path(__file__).parent.parent / 'scripts')
+_EDICT_HOME = pathlib.Path(os.environ.get('EDICT_HOME', pathlib.Path.home() / '.claude' / 'edict'))
+scripts_dir = str(_EDICT_HOME / 'scripts')
 sys.path.insert(0, scripts_dir)
 from file_lock import atomic_json_read, atomic_json_write, atomic_json_update
 from utils import validate_url
@@ -36,8 +37,8 @@ _SAFE_NAME_RE = re.compile(r'^[a-zA-Z0-9_\-\u4e00-\u9fff]+$')
 
 BASE = pathlib.Path(__file__).parent
 DIST = BASE / 'dist'          # React 构建产物 (npm run build)
-DATA = BASE.parent / "data"
-SCRIPTS = BASE.parent / 'scripts'
+DATA = _EDICT_HOME / 'data'
+SCRIPTS = _EDICT_HOME / 'scripts'
 
 # 静态资源 MIME 类型
 _MIME_TYPES = {
