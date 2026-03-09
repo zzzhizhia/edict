@@ -5,6 +5,7 @@ DASHBOARD_PORT ?= 17891
 ROOT_DIR := $(shell pwd)
 PID_DIR := $(ROOT_DIR)/.pids
 LOG_DIR := $(ROOT_DIR)/logs
+PYTHON := $(ROOT_DIR)/.venv/bin/python3
 
 # ── 一键启动所有服务 ──
 start:
@@ -27,7 +28,7 @@ backend:
 		echo "⏭️  Backend 已在运行 (PID $$(cat $(PID_DIR)/backend.pid))"; \
 	else \
 		cd $(ROOT_DIR)/edict/backend && \
-		python3 -m uvicorn app.main:app --host 127.0.0.1 --port $(BACKEND_PORT) \
+		$(PYTHON) -m uvicorn app.main:app --host 127.0.0.1 --port $(BACKEND_PORT) \
 			>> $(LOG_DIR)/backend.log 2>&1 & \
 		echo $$! > $(PID_DIR)/backend.pid; \
 		echo "✅ Backend 启动 (PID $$!, port $(BACKEND_PORT))"; \
@@ -39,7 +40,7 @@ dashboard:
 	@if [ -f $(PID_DIR)/dashboard.pid ] && kill -0 $$(cat $(PID_DIR)/dashboard.pid) 2>/dev/null; then \
 		echo "⏭️  Dashboard 已在运行 (PID $$(cat $(PID_DIR)/dashboard.pid))"; \
 	else \
-		python3 $(ROOT_DIR)/dashboard/server.py --port $(DASHBOARD_PORT) \
+		$(PYTHON) $(ROOT_DIR)/dashboard/server.py --port $(DASHBOARD_PORT) \
 			>> $(LOG_DIR)/dashboard.log 2>&1 & \
 		echo $$! > $(PID_DIR)/dashboard.pid; \
 		echo "✅ Dashboard 启动 (PID $$!, port $(DASHBOARD_PORT))"; \
