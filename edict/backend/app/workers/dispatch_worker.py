@@ -1,32 +1,29 @@
-"""Dispatch Worker — 消费 task.dispatch 事件，执行 Claude Code agent 调用。
+"""Dispatch Worker — 消费 task.dispatch 事件，执行 Agent 调用。
 
 核心解决旧架构痛点：
 - 旧: daemon 线程 + subprocess.run → kill -9 丢失一切
 - 新: Redis Streams ACK 保证 → 崩溃后自动重新投递
+- 新: Agent SDK 流式事件实时推送到 EventBus
 
 流程:
 1. 从 task.dispatch stream 消费事件
-2. 调用 Claude Code CLI: `claude -p --agent xxx "..."`
-3. 解析 agent 输出（kanban_update.py 调用结果）
-4. ACK 事件
+2. 通过 AgentRunner 调用 Agent SDK（流式事件实时推送）
+3. ACK 事件
 """
 
 import asyncio
 import logging
-import os
 import signal
-import subprocess
-import uuid
-from datetime import datetime, timezone
 
 from ..config import get_settings
 from ..services.event_bus import (
     EventBus,
     TOPIC_TASK_DISPATCH,
-    TOPIC_TASK_STATUS,
     TOPIC_AGENT_THOUGHTS,
     TOPIC_AGENT_HEARTBEAT,
 )
+from ..services.agent_runner import AgentRunner
+from ..services.usage_tracker import UsageTracker
 
 log = logging.getLogger("edict.dispatcher")
 
@@ -35,18 +32,28 @@ CONSUMER = "disp-1"
 
 
 class DispatchWorker:
-    """Agent 派发 Worker — 调用 Claude Code CLI 执行 agent 任务。"""
+    """Agent 派发 Worker — 通过 AgentRunner 执行 agent 任务。"""
 
-    def __init__(self, max_concurrent: int = 3):
+    def __init__(self, agent_runner: AgentRunner | None = None, max_concurrent: int = 3):
         self.bus = EventBus()
         self._running = False
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._active_tasks: dict[str, asyncio.Task] = {}
+        self._agent_runner = agent_runner
 
     async def start(self):
         await self.bus.connect()
         await self.bus.ensure_consumer_group(TOPIC_TASK_DISPATCH, GROUP)
         self._running = True
+
+        # Initialize AgentRunner if not injected
+        if self._agent_runner is None:
+            usage_tracker = UsageTracker(redis=self.bus.redis)
+            self._agent_runner = AgentRunner(
+                event_bus=self.bus,
+                usage_tracker=usage_tracker,
+            )
+
         log.info("🚀 Dispatch worker started")
 
         # 恢复崩溃遗留
@@ -89,7 +96,7 @@ class DispatchWorker:
             task.add_done_callback(lambda t, tid=task_id: self._active_tasks.pop(tid, None))
 
     async def _dispatch(self, entry_id: str, event: dict):
-        """执行一次 agent 派发。"""
+        """执行一次 agent 派发 — 通过 AgentRunner 调用 Agent SDK。"""
         async with self._semaphore:
             payload = event.get("payload", {})
             task_id = payload.get("task_id", "")
@@ -110,9 +117,16 @@ class DispatchWorker:
             )
 
             try:
-                result = await self._call_claude_code(agent, message, task_id, trace_id)
+                settings = get_settings()
+                result = await self._agent_runner.run_agent(
+                    agent_id=agent,
+                    message=message,
+                    task_id=task_id,
+                    trace_id=trace_id,
+                    timeout=settings.agent_sdk_timeout_sec,
+                )
 
-                # 发布 agent 输出
+                # 发布 agent 最终输出
                 await self.bus.publish(
                     topic=TOPIC_AGENT_THOUGHTS,
                     trace_id=trace_id,
@@ -121,17 +135,22 @@ class DispatchWorker:
                     payload={
                         "task_id": task_id,
                         "agent": agent,
-                        "output": result.get("stdout", ""),
-                        "return_code": result.get("returncode", -1),
+                        "output": result.output,
+                        "return_code": result.return_code,
+                        "cost_usd": result.cost_usd,
+                        "duration_ms": result.duration_ms,
                     },
                 )
 
-                if result.get("returncode") == 0:
-                    log.info(f"✅ Agent '{agent}' completed task {task_id}")
+                if result.success:
+                    log.info(
+                        f"✅ Agent '{agent}' completed task {task_id} "
+                        f"(${result.cost_usd:.4f}, {result.duration_ms}ms)"
+                    )
                 else:
                     log.warning(
-                        f"⚠️ Agent '{agent}' returned non-zero for task {task_id}: "
-                        f"rc={result.get('returncode')}"
+                        f"⚠️ Agent '{agent}' failed for task {task_id}: "
+                        f"rc={result.return_code}"
                     )
 
                 # ACK — 事件处理完毕
@@ -140,51 +159,6 @@ class DispatchWorker:
             except Exception as e:
                 log.error(f"❌ Dispatch failed: task {task_id} → {agent}: {e}", exc_info=True)
                 # 不 ACK → Redis 会重新投递给其他消费者
-
-    async def _call_claude_code(
-        self,
-        agent: str,
-        message: str,
-        task_id: str,
-        trace_id: str,
-    ) -> dict:
-        """异步调用 Claude Code CLI — 在线程池中执行。"""
-        settings = get_settings()
-        cmd = [
-            "claude", "-p",
-            "--agent", agent,
-            message,
-        ]
-
-        env = os.environ.copy()
-        env["EDICT_TASK_ID"] = task_id
-        env["EDICT_TRACE_ID"] = trace_id
-        env["EDICT_API_URL"] = f"http://localhost:{settings.port}"
-
-        log.debug(f"Executing: {' '.join(cmd)}")
-
-        def _run():
-            try:
-                proc = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=300,
-                    env=env,
-                    cwd=settings.claude_code_project_dir or None,
-                )
-                return {
-                    "returncode": proc.returncode,
-                    "stdout": proc.stdout[-5000:] if proc.stdout else "",
-                    "stderr": proc.stderr[-2000:] if proc.stderr else "",
-                }
-            except subprocess.TimeoutExpired:
-                return {"returncode": -1, "stdout": "", "stderr": "TIMEOUT after 300s"}
-            except FileNotFoundError:
-                return {"returncode": -1, "stdout": "", "stderr": "claude command not found"}
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _run)
 
 
 async def run_dispatcher():

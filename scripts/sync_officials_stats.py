@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""同步各官员统计数据 → data/officials_stats.json"""
+"""同步各官员统计数据 → data/officials_stats.json
+
+数据源（优先级）：
+1. Backend UsageTracker (data/usage_log.jsonl) — Agent SDK 精确记录
+2. Claude Code sessions.json — 降级/历史兼容
+"""
 import json, pathlib, datetime, logging
 from file_lock import atomic_json_write
 
@@ -8,6 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message
 
 BASE = pathlib.Path(__file__).resolve().parent.parent
 DATA = BASE / 'data'
+USAGE_LOG = DATA / 'usage_log.jsonl'
 AGENTS_ROOT = pathlib.Path.home() / '.claude' / 'projects'
 CLAUDE_SETTINGS = pathlib.Path.home() / '.claude' / 'settings.json'
 
@@ -71,8 +77,54 @@ def get_model(agent_id):
                 return normalize_model(a.get('model', default), default)
     return default
 
+def scan_agent_from_usage_log(agent_id):
+    """从 UsageTracker 产出的 usage_log.jsonl 读取精确 token/cost 数据。"""
+    if not USAGE_LOG.exists():
+        return None
+    tin = tout = cr = cw = 0
+    cost = 0.0
+    call_count = 0
+    last_ts = None
+    try:
+        for line in USAGE_LOG.read_text(errors='ignore').splitlines():
+            try:
+                entry = json.loads(line)
+            except Exception:
+                continue
+            if entry.get('agent_id') != agent_id:
+                continue
+            tin += entry.get('input_tokens', 0) or 0
+            tout += entry.get('output_tokens', 0) or 0
+            cr += entry.get('cache_read_tokens', 0) or 0
+            cw += entry.get('cache_write_tokens', 0) or 0
+            cost += entry.get('cost_usd', 0) or 0
+            call_count += 1
+            ts_str = entry.get('timestamp')
+            if ts_str:
+                try:
+                    t = datetime.datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                    if last_ts is None or t > last_ts:
+                        last_ts = t
+                except Exception:
+                    pass
+    except Exception:
+        return None
+
+    if call_count == 0:
+        return None
+
+    return {
+        'tokens_in': tin, 'tokens_out': tout,
+        'cache_read': cr, 'cache_write': cw,
+        'sessions': call_count,
+        'last_active': last_ts.strftime('%Y-%m-%d %H:%M') if last_ts else None,
+        'messages': call_count,
+        'cost_usd_precise': round(cost, 4),
+    }
+
+
 def scan_agent(agent_id):
-    """从 sessions.json 读取 token 统计（累计所有 session）"""
+    """从 sessions.json 读取 token 统计（累计所有 session）— 降级数据源"""
     sj = AGENTS_ROOT / agent_id / 'sessions' / 'sessions.json'
     if not sj.exists() and agent_id == 'taizi':
         sj = AGENTS_ROOT / 'main' / 'sessions' / 'sessions.json'
@@ -161,10 +213,14 @@ def main():
     result = []
     for off in OFFICIALS:
         model   = get_model(off['id'])
-        ss      = scan_agent(off['id'])
+        # Prefer precise data from UsageTracker, fallback to session scanning
+        ss_precise = scan_agent_from_usage_log(off['id'])
+        ss_legacy  = scan_agent(off['id'])
+        ss = ss_precise if ss_precise else ss_legacy
         ts      = get_task_stats(off['label'], tasks)
         hb      = get_hb(off['id'], live_tasks)
-        cost_usd = calc_cost(ss, model)
+        # Use precise cost if available, otherwise estimate from token counts
+        cost_usd = ss.get('cost_usd_precise') if ss.get('cost_usd_precise') else calc_cost(ss, model)
 
         result.append({
             **off,

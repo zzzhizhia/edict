@@ -672,14 +672,39 @@ _AGENT_DEPTS = [
 ]
 
 
-def _check_gateway_alive():
-    """检测 claude 进程是否在运行。"""
+BACKEND_URL = os.environ.get('EDICT_BACKEND_URL', 'http://127.0.0.1:8000')
+
+
+def _backend_post(path, json_data=None, timeout=10):
+    """向 Backend Admin API 发送 POST 请求。"""
+    import urllib.request
+    url = f'{BACKEND_URL}{path}'
+    data = json.dumps(json_data or {}).encode()
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
     try:
-        result = subprocess.run(['pgrep', '-f', 'claude'],
-                                capture_output=True, text=True, timeout=5)
-        return result.returncode == 0
-    except Exception:
-        return False
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        return json.loads(resp.read())
+    except Exception as e:
+        log.warning(f'Backend API call failed: {path}: {e}')
+        return None
+
+
+def _backend_get(path, timeout=5):
+    """向 Backend Admin API 发送 GET 请求。"""
+    import urllib.request
+    url = f'{BACKEND_URL}{path}'
+    try:
+        resp = urllib.request.urlopen(url, timeout=timeout)
+        return json.loads(resp.read())
+    except Exception as e:
+        log.warning(f'Backend API call failed: {path}: {e}')
+        return None
+
+
+def _check_gateway_alive():
+    """检测 Backend 是否在运行（替代旧的 pgrep 检测）。"""
+    result = _backend_get('/health')
+    return result is not None and result.get('status') == 'ok'
 
 
 def _check_gateway_probe():
@@ -713,15 +738,11 @@ def _get_agent_session_status(agent_id):
 
 
 def _check_agent_process(agent_id):
-    """检测是否有该 Agent 的 claude 进程正在运行。"""
-    try:
-        result = subprocess.run(
-            ['pgrep', '-f', f'claude.*--agent.*{agent_id}'],
-            capture_output=True, text=True, timeout=5
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
+    """检测 Agent 是否有活跃 SDK 会话（替代旧的 pgrep 检测）。"""
+    result = _backend_get('/api/admin/active-agents')
+    if result and result.get('ok'):
+        return any(a.get('agent_id') == agent_id for a in result.get('active', []))
+    return False
 
 
 def _check_agent_workspace(agent_id):
@@ -737,10 +758,17 @@ def get_agents_status():
     - lastActive: 最后活跃时间
     - sessions: 会话数
     - hasWorkspace: 工作空间是否存在
-    - processAlive: 是否有进程在运行
+    - processAlive: 是否有活跃 SDK 会话
     """
     gateway_alive = _check_gateway_alive()
     gateway_probe = False
+
+    # Fetch active agents from Backend once (not per-agent)
+    active_result = _backend_get('/api/admin/active-agents')
+    active_agent_ids = set()
+    if active_result and active_result.get('ok'):
+        for a in active_result.get('active', []):
+            active_agent_ids.add(a.get('agent_id'))
 
     agents = []
     seen_ids = set()
@@ -752,7 +780,7 @@ def get_agents_status():
 
         has_workspace = _check_agent_workspace(aid)
         last_ts, sess_count, is_busy = _get_agent_session_status(aid)
-        process_alive = _check_agent_process(aid)
+        process_alive = aid in active_agent_ids
 
         # 状态判定
         if not has_workspace:
@@ -814,41 +842,26 @@ def get_agents_status():
 
 
 def wake_agent(agent_id, message=''):
-    """唤醒指定 Agent，发送一条心跳/唤醒消息。"""
+    """唤醒指定 Agent — 通过 Backend Admin API。"""
     if not _SAFE_NAME_RE.match(agent_id):
         return {'ok': False, 'error': f'agent_id 非法: {agent_id}'}
     if not _check_agent_workspace(agent_id):
         return {'ok': False, 'error': f'{agent_id} 工作空间不存在，请先配置'}
-    if not _check_gateway_alive():
-        return {'ok': False, 'error': '请确保 claude 命令可用'}
 
-    # agent_id 直接作为 runtime_id
-    runtime_id = agent_id
     msg = message or f'🔔 系统心跳检测 — 请回复 OK 确认在线。当前时间: {now_iso()}'
 
-    def do_wake():
-        try:
-            cmd = ['claude', '-p', '--agent', runtime_id, msg]
-            log.info(f'🔔 唤醒 {agent_id}...')
-            # 带重试（最多2次）
-            for attempt in range(1, 3):
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
-                if result.returncode == 0:
-                    log.info(f'✅ {agent_id} 已唤醒')
-                    return
-                err_msg = result.stderr[:200] if result.stderr else result.stdout[:200]
-                log.warning(f'⚠️ {agent_id} 唤醒失败(第{attempt}次): {err_msg}')
-                if attempt < 2:
-                    import time
-                    time.sleep(5)
-            log.error(f'❌ {agent_id} 唤醒最终失败')
-        except subprocess.TimeoutExpired:
-            log.error(f'❌ {agent_id} 唤醒超时(130s)')
-        except Exception as e:
-            log.warning(f'⚠️ {agent_id} 唤醒异常: {e}')
-    threading.Thread(target=do_wake, daemon=True).start()
+    def _do():
+        result = _backend_post('/api/admin/wake-agent', {
+            'agent_id': agent_id,
+            'message': msg,
+        })
+        if result and result.get('ok'):
+            log.info(f'✅ {agent_id} 唤醒指令已发送到 Backend')
+        else:
+            log.warning(f'⚠️ {agent_id} 唤醒失败: {result}')
+    threading.Thread(target=_do, daemon=True).start()
 
-    return {'ok': True, 'message': f'{agent_id} 唤醒指令已发出，约10-30秒后生效'}
+    return {'ok': True, 'message': f'{agent_id} 唤醒指令已发出'}
 
 
 # ══ Agent 实时活动读取 ══
@@ -1941,74 +1954,37 @@ def dispatch_for_state(task_id, task, new_state, trigger='state-transition'):
     ))
 
     def _do_dispatch():
-        try:
-            if not _check_gateway_alive():
-                log.warning(f'⚠️ {task_id} 自动派发跳过: Gateway 未启动')
-                _update_task_scheduler(task_id, lambda t, s: s.update({
+        log.info(f'🔄 自动派发 {task_id} → {agent_id} via Backend API...')
+        result = _backend_post('/api/admin/dispatch', {
+            'task_id': task_id,
+            'agent_id': agent_id,
+            'message': msg,
+            'trigger': trigger,
+        })
+        if result and result.get('ok'):
+            log.info(f'✅ {task_id} 派发已提交到 Backend → {agent_id}')
+            _update_task_scheduler(task_id, lambda t, s: (
+                s.update({
                     'lastDispatchAt': now_iso(),
-                    'lastDispatchStatus': 'gateway-offline',
+                    'lastDispatchStatus': 'queued',
                     'lastDispatchAgent': agent_id,
                     'lastDispatchTrigger': trigger,
-                }))
-                return
-            cmd = ['claude', '-p', '--agent', agent_id, msg]
-            max_retries = 2
-            err = ''
-            for attempt in range(1, max_retries + 1):
-                log.info(f'🔄 自动派发 {task_id} → {agent_id} (第{attempt}次)...')
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=310)
-                if result.returncode == 0:
-                    log.info(f'✅ {task_id} 自动派发成功 → {agent_id}')
-                    _update_task_scheduler(task_id, lambda t, s: (
-                        s.update({
-                            'lastDispatchAt': now_iso(),
-                            'lastDispatchStatus': 'success',
-                            'lastDispatchAgent': agent_id,
-                            'lastDispatchTrigger': trigger,
-                            'lastDispatchError': '',
-                        }),
-                        _scheduler_add_flow(t, f'派发成功：{agent_id}（{trigger}）', to=t.get('org', ''))
-                    ))
-                    return
-                err = result.stderr[:200] if result.stderr else result.stdout[:200]
-                log.warning(f'⚠️ {task_id} 自动派发失败(第{attempt}次): {err}')
-                if attempt < max_retries:
-                    import time
-                    time.sleep(5)
-            log.error(f'❌ {task_id} 自动派发最终失败 → {agent_id}')
+                    'lastDispatchError': '',
+                }),
+                _scheduler_add_flow(t, f'已提交 Backend 派发：{agent_id}（{trigger}）', to=t.get('org', ''))
+            ))
+        else:
+            err = str(result) if result else 'Backend 不可达'
+            log.error(f'❌ {task_id} 派发失败: {err}')
             _update_task_scheduler(task_id, lambda t, s: (
                 s.update({
                     'lastDispatchAt': now_iso(),
                     'lastDispatchStatus': 'failed',
                     'lastDispatchAgent': agent_id,
                     'lastDispatchTrigger': trigger,
-                    'lastDispatchError': err,
+                    'lastDispatchError': err[:200],
                 }),
                 _scheduler_add_flow(t, f'派发失败：{agent_id}（{trigger}）', to=t.get('org', ''))
-            ))
-        except subprocess.TimeoutExpired:
-            log.error(f'❌ {task_id} 自动派发超时 → {agent_id}')
-            _update_task_scheduler(task_id, lambda t, s: (
-                s.update({
-                    'lastDispatchAt': now_iso(),
-                    'lastDispatchStatus': 'timeout',
-                    'lastDispatchAgent': agent_id,
-                    'lastDispatchTrigger': trigger,
-                    'lastDispatchError': 'timeout',
-                }),
-                _scheduler_add_flow(t, f'派发超时：{agent_id}（{trigger}）', to=t.get('org', ''))
-            ))
-        except Exception as e:
-            log.warning(f'⚠️ {task_id} 自动派发异常: {e}')
-            _update_task_scheduler(task_id, lambda t, s: (
-                s.update({
-                    'lastDispatchAt': now_iso(),
-                    'lastDispatchStatus': 'error',
-                    'lastDispatchAgent': agent_id,
-                    'lastDispatchTrigger': trigger,
-                    'lastDispatchError': str(e)[:200],
-                }),
-                _scheduler_add_flow(t, f'派发异常：{agent_id}（{trigger}）', to=t.get('org', ''))
             ))
 
     threading.Thread(target=_do_dispatch, daemon=True).start()

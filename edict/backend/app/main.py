@@ -20,6 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .services.event_bus import get_event_bus
+from .services.agent_runner import AgentRunner
+from .services.usage_tracker import UsageTracker
 from .api import tasks, agents, events, admin, websocket
 from .api import legacy
 
@@ -39,6 +41,13 @@ async def lifespan(app: FastAPI):
     # 连接 Event Bus
     bus = await get_event_bus()
     log.info("✅ Event Bus connected")
+
+    # 创建 AgentRunner 单例
+    usage_tracker = UsageTracker(redis=bus.redis)
+    agent_runner = AgentRunner(event_bus=bus, usage_tracker=usage_tracker, config=settings)
+    app.state.agent_runner = agent_runner
+    app.state.usage_tracker = usage_tracker
+    log.info("✅ AgentRunner initialized")
 
     yield
 

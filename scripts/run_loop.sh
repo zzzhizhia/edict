@@ -67,7 +67,7 @@ safe_run() {
 
 while true; do
   rotate_log
-  safe_run "$SCRIPT_DIR/sync_from_openclaw_runtime.py"
+  # NOTE: sync_from_openclaw_runtime.py 已移除 — Agent SDK 事件实时流入，不再需要扫描 session JSONL
   safe_run "$SCRIPT_DIR/sync_agent_config.py"
   safe_run "$SCRIPT_DIR/apply_model_changes.py"
   safe_run "$SCRIPT_DIR/sync_officials_stats.py"

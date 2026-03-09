@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     claude_code_bin: str = "claude"
     claude_code_project_dir: str | None = None
 
+    # ── Agent SDK ──
+    agent_sdk_max_concurrent: int = 3
+    agent_sdk_timeout_sec: int = 300
+    anthropic_api_key: str | None = None
+
     # ── Legacy 兼容 ──
     legacy_data_dir: str = "../data"
     legacy_tasks_file: str = "../data/tasks_source.json"
