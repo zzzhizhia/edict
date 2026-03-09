@@ -136,10 +136,15 @@ class AgentRunner:
             max_budget_usd=agent_cfg.max_budget_usd,
         )
 
-        # Set env vars for agent scripts (kanban_update.py etc.)
-        os.environ["EDICT_TASK_ID"] = session.task_id
-        os.environ["EDICT_TRACE_ID"] = session.trace_id
-        os.environ["EDICT_API_URL"] = f"http://localhost:{self._config.port}"
+        # Inject task context into system prompt (not os.environ, to avoid
+        # concurrent session cross-contamination)
+        task_context = (
+            f"\n\n[EDICT_CONTEXT]\n"
+            f"EDICT_TASK_ID={session.task_id}\n"
+            f"EDICT_TRACE_ID={session.trace_id}\n"
+            f"EDICT_API_URL=http://localhost:{self._config.port}\n"
+        )
+        options.system_prompt = (options.system_prompt or "") + task_context
 
         result = AgentResult(success=True, model=agent_cfg.model)
 
@@ -220,7 +225,8 @@ class AgentRunner:
     ) -> AgentResult:
         """降级路径：通过 subprocess 调用 Claude CLI（SDK 不可用时）。"""
         settings = self._config
-        cmd = ["claude", "-p", "--agent", agent_id, message]
+        claude_bin = settings.claude_code_bin or "claude"
+        cmd = [claude_bin, "-p", "--agent", agent_id, message]
 
         env = os.environ.copy()
         env["EDICT_TASK_ID"] = task_id
@@ -246,7 +252,7 @@ class AgentRunner:
                 return -1, "", "claude command not found"
 
         loop = asyncio.get_event_loop()
-        rc, stdout, stderr = await loop.run_in_executor(None, _run)
+        rc, stdout, _stderr = await loop.run_in_executor(None, _run)
 
         duration_ms = int((time.monotonic() - start_time) * 1000)
         return AgentResult(

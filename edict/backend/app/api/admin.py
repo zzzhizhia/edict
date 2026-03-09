@@ -4,7 +4,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -112,8 +112,19 @@ async def get_config():
 # Agent SDK 管理端点 — 供 Dashboard (server.py) 调用
 # ══════════════════════════════════════════════════════════════
 
+_LOCALHOST_IPS = {"127.0.0.1", "::1", "localhost"}
+
+
+def _require_localhost(request: Request):
+    """限制 Agent 调度端点仅允许本机访问。"""
+    client_host = request.client.host if request.client else ""
+    if client_host not in _LOCALHOST_IPS:
+        raise HTTPException(status_code=403, detail="Agent admin API is localhost-only")
+
+
 def _get_runner(request: Request):
     """从 app.state 获取 AgentRunner 单例。"""
+    _require_localhost(request)
     runner = getattr(request.app.state, "agent_runner", None)
     if runner is None:
         raise RuntimeError("AgentRunner not initialized")
