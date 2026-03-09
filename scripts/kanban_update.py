@@ -125,7 +125,7 @@ def _sanitize_remark(raw):
 
 def _infer_agent_id_from_runtime(task=None):
     """尽量推断当前执行该命令的 Agent。"""
-    for k in ('OPENCLAW_AGENT_ID', 'OPENCLAW_AGENT', 'AGENT_ID'):
+    for k in ('CLAUDE_AGENT_ID', 'CLAUDE_AGENT', 'AGENT_ID'):
         v = (os.environ.get(k) or '').strip()
         if v:
             return v

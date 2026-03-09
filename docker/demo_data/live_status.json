@@ -358,10 +358,10 @@
       "official": "中书令",
       "org": "中书省",
       "state": "Done",
-      "now": "已完成：项目已推送至 https://github.com/cft0808/openclaw-sansheng-liubu",
+      "now": "已完成：项目已推送至 https://github.com/cft0808/edict-sansheng-liubu",
       "eta": "2026-02-23 22:37",
       "block": "无",
-      "output": "https://github.com/cft0808/openclaw-sansheng-liubu",
+      "output": "https://github.com/cft0808/edict-sansheng-liubu",
       "ac": "看板增强、文档完整、一键安装、GitHub推送",
       "flow_log": [
         {
@@ -386,7 +386,7 @@
           "at": "2026-02-23T15:37:00Z",
           "from": "中书省",
           "to": "皇上",
-          "remark": "✅ 回奏：https://github.com/cft0808/openclaw-sansheng-liubu 已上线"
+          "remark": "✅ 回奏：https://github.com/cft0808/edict-sansheng-liubu 已上线"
         }
       ],
       "updatedAt": "2026-02-23T15:16:22.408230Z",
@@ -405,7 +405,7 @@
       "now": "全部完成，已回奏皇上",
       "eta": "2026-02-23 21:30",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/workspace-shangshu/",
+      "output": "/Users/bingsen/.claude/agents/shangshu/",
       "flow_log": [
         {
           "at": "2026-02-23T12:23:15Z",
@@ -503,7 +503,7 @@
       "now": "已完成：三省六部并行流程规划",
       "eta": "已完成 2026-02-23 10:27",
       "block": "无",
-      "output": "/Users/bingsen/clawd/junjichu-v2/docs/三省六部-OpenClaw实施指南-实装版-v1.md",
+      "output": "/Users/bingsen/clawd/junjichu-v2/docs/三省六部-Claude Code实施指南-实装版-v1.md",
       "flow": {
         "draft": "已起草",
         "review": "门下通过",
@@ -572,13 +572,13 @@
       "now": "feishu/direct · 模型 claude-sonnet-4-6",
       "eta": "2026-02-24 22:11:03",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/zhongshu/sessions/af6ad7f2-0130-4d88-81f0-dad420cc0dc7.jsonl",
+      "output": "/Users/bingsen/.claude/agents/zhongshu/sessions/af6ad7f2-0130-4d88-81f0-dad420cc0dc7.jsonl",
       "flow": {
         "draft": "agent=zhongshu",
         "review": "updatedAt=2026-02-24 22:11:03",
         "dispatch": "sessionKey=agent:zhongshu:main"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T14:11:30.989Z",
@@ -662,13 +662,13 @@
       "now": "-/direct · 模型 claude-sonnet-4-6",
       "eta": "2026-02-24 22:10:35",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/mc-gateway-2f631e27-511b-45db-8d59-791c8c2cd4a5/sessions/7df8432c-ff6e-4b4c-99f2-1301c2daebc3.jsonl",
+      "output": "/Users/bingsen/.claude/agents/mc-gateway-2f631e27-511b-45db-8d59-791c8c2cd4a5/sessions/7df8432c-ff6e-4b4c-99f2-1301c2daebc3.jsonl",
       "flow": {
         "draft": "agent=mc-gateway-2f631e27-511b-45db-8d59-791c8c2cd4a5",
         "review": "updatedAt=2026-02-24 22:10:35",
         "dispatch": "sessionKey=agent:mc-gateway-2f631e27-511b-45db-8d59-791c8c2cd4a5:main"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T13:37:43.673Z",
@@ -752,13 +752,13 @@
       "now": "feishu/- · 模型 claude-sonnet-4-6",
       "eta": "2026-02-24 22:10:18",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/shangshu/sessions/8be927fe-8360-449e-b02d-4c7d70d9f141.jsonl",
+      "output": "/Users/bingsen/.claude/agents/shangshu/sessions/8be927fe-8360-449e-b02d-4c7d70d9f141.jsonl",
       "flow": {
         "draft": "agent=shangshu",
         "review": "updatedAt=2026-02-24 22:10:18",
         "dispatch": "sessionKey=agent:shangshu:main"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T14:08:13.069Z",
@@ -842,13 +842,13 @@
       "now": "webchat/- · 模型 claude-sonnet-4-6",
       "eta": "2026-02-24 22:07:50",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/gongbu/sessions/77f5e08c-e75c-4094-b4db-071eae702f7d.jsonl",
+      "output": "/Users/bingsen/.claude/agents/gongbu/sessions/77f5e08c-e75c-4094-b4db-071eae702f7d.jsonl",
       "flow": {
         "draft": "agent=gongbu",
         "review": "updatedAt=2026-02-24 22:07:50",
         "dispatch": "sessionKey=agent:gongbu:subagent:de641ed5-fefa-4d35-9ca1-6895fa103447"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T14:06:50.309Z",
@@ -932,13 +932,13 @@
       "now": "webchat/- · 模型 claude-sonnet-4-6",
       "eta": "2026-02-24 22:07:43",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/libu/sessions/2f31143a-11f7-47fc-a2ef-86a65596486f.jsonl",
+      "output": "/Users/bingsen/.claude/agents/libu/sessions/2f31143a-11f7-47fc-a2ef-86a65596486f.jsonl",
       "flow": {
         "draft": "agent=libu",
         "review": "updatedAt=2026-02-24 22:07:43",
         "dispatch": "sessionKey=agent:libu:subagent:9a63ae48-0851-4d63-8a37-0326007a24ff"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T14:05:54.062Z",
@@ -1017,13 +1017,13 @@
       "now": "webchat/- · 模型 -",
       "eta": "2026-02-24 22:05:48",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/bingbu/sessions/53af4339-e3f9-49ec-8162-9880d0c51e26.jsonl",
+      "output": "/Users/bingsen/.claude/agents/bingbu/sessions/53af4339-e3f9-49ec-8162-9880d0c51e26.jsonl",
       "flow": {
         "draft": "agent=bingbu",
         "review": "updatedAt=2026-02-24 22:05:48",
         "dispatch": "sessionKey=agent:bingbu:subagent:36d6c4fc-66c7-49f1-bf15-b4ce9613c0ba"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-24T14:08:00.781Z",
@@ -1113,7 +1113,7 @@
         "review": "updatedAt=2026-02-24 06:19:47",
         "dispatch": "sessionKey=agent:shangshu:cron:3d21409f-eb0b-4f13-9f00-283e249e1704"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [],
       "sourceMeta": {
         "agentId": "shangshu",
@@ -1148,7 +1148,7 @@
         "review": "updatedAt=2026-02-24 06:19:47",
         "dispatch": "sessionKey=agent:shangshu:cron:3d21409f-eb0b-4f13-9f00-283e249e1704:run:ef5d83a2-9e5a-42f1-b16c-396ab2f8b871"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [],
       "sourceMeta": {
         "agentId": "shangshu",
@@ -1183,7 +1183,7 @@
         "review": "updatedAt=2026-02-24 06:03:01",
         "dispatch": "sessionKey=agent:shangshu:cron:b03078fe-c25d-4a65-a05a-2f7a9453ddb2"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [],
       "sourceMeta": {
         "agentId": "shangshu",
@@ -1218,7 +1218,7 @@
         "review": "updatedAt=2026-02-24 06:03:01",
         "dispatch": "sessionKey=agent:shangshu:cron:b03078fe-c25d-4a65-a05a-2f7a9453ddb2:run:5d3c50db-0b91-4ff0-a9eb-26114ffb4339"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [],
       "sourceMeta": {
         "agentId": "shangshu",
@@ -1253,7 +1253,7 @@
         "review": "updatedAt=2026-02-24 00:12:22",
         "dispatch": "sessionKey=agent:shangshu:cron:b03078fe-c25d-4a65-a05a-2f7a9453ddb2:run:aaa29ca8-46d1-4dfd-87a8-c474f9bb8227"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [],
       "sourceMeta": {
         "agentId": "shangshu",
@@ -1313,13 +1313,13 @@
       "now": "feishu/direct · 模型 gpt-5.3-codex",
       "eta": "2026-02-23 15:20:53",
       "block": "无",
-      "output": "/Users/bingsen/.openclaw/agents/main/sessions/de50c4d8-6d36-470f-8a32-a55973726117.jsonl",
+      "output": "/Users/bingsen/.claude/agents/main/sessions/de50c4d8-6d36-470f-8a32-a55973726117.jsonl",
       "flow": {
         "draft": "agent=main",
         "review": "updatedAt=2026-02-23 15:20:53",
         "dispatch": "sessionKey=agent:main:main"
       },
-      "ac": "来自 OpenClaw runtime sessions 的实时映射",
+      "ac": "来自 Claude Code runtime sessions 的实时映射",
       "activity": [
         {
           "at": "2026-02-23T07:19:47.493Z",
@@ -1369,7 +1369,7 @@
         {
           "at": "2026-02-23T07:20:53.112Z",
           "kind": "assistant",
-          "text": "[[reply_to_current]]回父皇：**好了**，已打通。😊  刚才您看不到 Pair/Approve 的根因，儿臣已代为走完： - 用 CLI 批准了挂起配对请求（`openclaw devices approve --lat"
+          "text": "[[reply_to_current]]回父皇：**好了**，已打通。😊  刚才您看不到 Pair/Approve 的根因，儿臣已代为走完： - 用 CLI 批准了挂起配对请求（`claude devices approve --lat"
         }
       ],
       "sourceMeta": {
@@ -1424,21 +1424,21 @@
       "at": "未知",
       "official": "中书令",
       "task": "三省六部制开源 GitHub 项目",
-      "out": "https://github.com/cft0808/openclaw-sansheng-liubu",
+      "out": "https://github.com/cft0808/edict-sansheng-liubu",
       "qa": "待补成果"
     },
     {
       "at": "2026-02-23 21:27:18",
       "official": "尚书令",
       "task": "电芯循环测试数据预测算法设计与可视化验证",
-      "out": "/Users/bingsen/.openclaw/workspace-shangshu/",
+      "out": "/Users/bingsen/.claude/agents/shangshu/",
       "qa": "通过"
     },
     {
       "at": "2026-02-23 10:05:17",
       "official": "中书令",
       "task": "中书省：并行流程规划",
-      "out": "/Users/bingsen/clawd/junjichu-v2/docs/三省六部-OpenClaw实施指南-实装版-v1.md",
+      "out": "/Users/bingsen/clawd/junjichu-v2/docs/三省六部-Claude Code实施指南-实装版-v1.md",
       "qa": "通过"
     },
     {
@@ -1476,7 +1476,7 @@
     "lastSuccessAt": "2026-02-24 22:13:06",
     "lastSyncAt": "2026-02-24 22:13:06",
     "durationMs": 4720,
-    "source": "openclaw_runtime_to_feishu_bitable",
+    "source": "claude_runtime_to_feishu_bitable",
     "recordCount": 24,
     "created": 0,
     "updated": 3,

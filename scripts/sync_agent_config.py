@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-同步 openclaw.json 中的 agent 配置 → data/agent_config.json
-支持自动发现 agent workspace 下的 Skills 目录
+同步 agent 配置 → data/agent_config.json
+基于 ID_LABEL 静态映射生成 agent 配置，支持自动发现 Skills 目录
 """
 import json, pathlib, datetime, logging
 from file_lock import atomic_json_write
@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message
 # Auto-detect project root (parent of scripts/)
 BASE = pathlib.Path(__file__).parent.parent
 DATA = BASE / 'data'
-OPENCLAW_CFG = pathlib.Path.home() / '.openclaw' / 'openclaw.json'
+CLAUDE_AGENTS_DIR = pathlib.Path.home() / '.claude' / 'agents'
 
 ID_LABEL = {
     'taizi':    {'label': '太子',   'role': '太子',     'duty': '飞书消息分拣与回奏',  'emoji': '🤴'},
@@ -80,60 +80,27 @@ def get_skills(workspace: str):
 
 
 def main():
-    cfg = {}
-    try:
-        cfg = json.loads(OPENCLAW_CFG.read_text())
-    except Exception as e:
-        log.warning(f'cannot read openclaw.json: {e}')
-        return
+    default_model = 'unknown'
 
-    agents_cfg = cfg.get('agents', {})
-    default_model = normalize_model(agents_cfg.get('defaults', {}).get('model', {}), 'unknown')
-    agents_list = agents_cfg.get('list', [])
+    # 直接用 ID_LABEL 作为 agent 源，不依赖外部配置文件
+    AGENT_ALLOW = {
+        'taizi':   ['zhongshu'],
+        'main':    ['zhongshu','menxia','shangshu','hubu','libu','bingbu','xingbu','gongbu','libu_hr'],
+        'zaochao': [],
+        'libu_hr': ['shangshu'],
+    }
 
     result = []
-    seen_ids = set()
-    for ag in agents_list:
-        ag_id = ag.get('id', '')
-        if ag_id not in ID_LABEL:
-            continue
-        meta = ID_LABEL[ag_id]
-        workspace = ag.get('workspace', str(pathlib.Path.home() / f'.openclaw/workspace-{ag_id}'))
+    for ag_id, meta in ID_LABEL.items():
+        agents_dir = str(CLAUDE_AGENTS_DIR)
         result.append({
             'id': ag_id,
             'label': meta['label'], 'role': meta['role'], 'duty': meta['duty'], 'emoji': meta['emoji'],
-            'model': normalize_model(ag.get('model', default_model), default_model),
+            'model': default_model,
             'defaultModel': default_model,
-            'workspace': workspace,
-            'skills': get_skills(workspace),
-            'allowAgents': ag.get('subagents', {}).get('allowAgents', []),
-        })
-        seen_ids.add(ag_id)
-
-    # 补充不在 openclaw.json agents list 中的 agent（兼容旧版 main）
-    EXTRA_AGENTS = {
-        'taizi':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-taizi'),
-                    'allowAgents': ['zhongshu']},
-        'main':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-main'),
-                    'allowAgents': ['zhongshu','menxia','shangshu','hubu','libu','bingbu','xingbu','gongbu','libu_hr']},
-        'zaochao': {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-zaochao'),
-                    'allowAgents': []},
-        'libu_hr': {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-libu_hr'),
-                    'allowAgents': ['shangshu']},
-    }
-    for ag_id, extra in EXTRA_AGENTS.items():
-        if ag_id in seen_ids or ag_id not in ID_LABEL:
-            continue
-        meta = ID_LABEL[ag_id]
-        result.append({
-            'id': ag_id,
-            'label': meta['label'], 'role': meta['role'], 'duty': meta['duty'], 'emoji': meta['emoji'],
-            'model': extra['model'],
-            'defaultModel': default_model,
-            'workspace': extra['workspace'],
-            'skills': get_skills(extra['workspace']),
-            'allowAgents': extra['allowAgents'],
-            'isDefaultModel': True,
+            'workspace': agents_dir,
+            'skills': get_skills(agents_dir),
+            'allowAgents': AGENT_ALLOW.get(ag_id, []),
         })
 
     payload = {
@@ -146,10 +113,8 @@ def main():
     atomic_json_write(DATA / 'agent_config.json', payload)
     log.info(f'{len(result)} agents synced')
 
-    # 自动部署 SOUL.md 到 workspace（如果项目里有更新）
-    deploy_soul_files()
-    # 同步 scripts/ 到各 workspace（保持 kanban_update.py 等最新）
-    sync_scripts_to_workspaces()
+    # 自动部署 agent 配置文件（如果项目里有更新）
+    deploy_agent_files()
 
 
 # 项目 agents/ 目录名 → 运行时 agent_id 映射
@@ -167,83 +132,26 @@ _SOUL_DEPLOY_MAP = {
     'zaochao': 'zaochao',
 }
 
-def sync_scripts_to_workspaces():
-    """将项目 scripts/ 目录同步到各 agent workspace（保持 kanban_update.py 等最新）"""
-    scripts_src = BASE / 'scripts'
-    if not scripts_src.is_dir():
-        return
-    synced = 0
-    for proj_name, runtime_id in _SOUL_DEPLOY_MAP.items():
-        ws_scripts = pathlib.Path.home() / f'.openclaw/workspace-{runtime_id}' / 'scripts'
-        ws_scripts.mkdir(parents=True, exist_ok=True)
-        for src_file in scripts_src.iterdir():
-            if src_file.suffix not in ('.py', '.sh') or src_file.stem.startswith('__'):
-                continue
-            dst_file = ws_scripts / src_file.name
-            try:
-                src_text = src_file.read_bytes()
-            except Exception:
-                continue
-            try:
-                dst_text = dst_file.read_bytes() if dst_file.exists() else b''
-            except Exception:
-                dst_text = b''
-            if src_text != dst_text:
-                dst_file.write_bytes(src_text)
-                synced += 1
-    # also sync to workspace-main for legacy compatibility
-    ws_main_scripts = pathlib.Path.home() / '.openclaw/workspace-main/scripts'
-    ws_main_scripts.mkdir(parents=True, exist_ok=True)
-    for src_file in scripts_src.iterdir():
-        if src_file.suffix not in ('.py', '.sh') or src_file.stem.startswith('__'):
-            continue
-        dst_file = ws_main_scripts / src_file.name
-        try:
-            src_text = src_file.read_bytes()
-            dst_text = dst_file.read_bytes() if dst_file.exists() else b''
-            if src_text != dst_text:
-                dst_file.write_bytes(src_text)
-                synced += 1
-        except Exception:
-            pass
-    if synced:
-        log.info(f'{synced} script files synced to workspaces')
-
-
-def deploy_soul_files():
-    """将项目 agents/xxx/SOUL.md 部署到 ~/.openclaw/workspace-xxx/soul.md"""
+def deploy_agent_files():
+    """将项目 agents/xxx/SOUL.md 部署到 ~/.claude/agents/{runtime_id}.md"""
     agents_dir = BASE / 'agents'
+    CLAUDE_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     deployed = 0
     for proj_name, runtime_id in _SOUL_DEPLOY_MAP.items():
         src = agents_dir / proj_name / 'SOUL.md'
         if not src.exists():
             continue
-        ws_dst = pathlib.Path.home() / f'.openclaw/workspace-{runtime_id}' / 'soul.md'
-        ws_dst.parent.mkdir(parents=True, exist_ok=True)
-        # 只在内容不同时更新（避免不必要的写入）
+        dst = CLAUDE_AGENTS_DIR / f'{runtime_id}.md'
         src_text = src.read_text(encoding='utf-8', errors='ignore')
         try:
-            dst_text = ws_dst.read_text(encoding='utf-8', errors='ignore')
+            dst_text = dst.read_text(encoding='utf-8', errors='ignore')
         except FileNotFoundError:
             dst_text = ''
         if src_text != dst_text:
-            ws_dst.write_text(src_text, encoding='utf-8')
+            dst.write_text(src_text, encoding='utf-8')
             deployed += 1
-        # 太子兼容：同步一份到 legacy main agent 目录
-        if runtime_id == 'taizi':
-            ag_dst = pathlib.Path.home() / '.openclaw/agents/main/SOUL.md'
-            ag_dst.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                ag_text = ag_dst.read_text(encoding='utf-8', errors='ignore')
-            except FileNotFoundError:
-                ag_text = ''
-            if src_text != ag_text:
-                ag_dst.write_text(src_text, encoding='utf-8')
-        # 确保 sessions 目录存在
-        sess_dir = pathlib.Path.home() / f'.openclaw/agents/{runtime_id}/sessions'
-        sess_dir.mkdir(parents=True, exist_ok=True)
     if deployed:
-        log.info(f'{deployed} SOUL.md files deployed')
+        log.info(f'{deployed} agent files deployed')
 
 
 if __name__ == '__main__':

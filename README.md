@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/OpenClaw-Required-blue?style=flat-square" alt="OpenClaw">
+  <img src="https://img.shields.io/badge/Claude_Code-Required-blue?style=flat-square" alt="Claude Code">
   <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Agents-12_Specialized-8B5CF6?style=flat-square" alt="Agents">
   <img src="https://img.shields.io/badge/Dashboard-Real--time-F59E0B?style=flat-square" alt="Dashboard">
@@ -53,7 +53,7 @@
 </p>
 </details>
 
-> 🐳 **没有 OpenClaw？** 跑一行 `docker run -p 7891:7891 cft0808/edict` 即可体验完整看板 Demo（预置模拟数据）。
+> 🐳 **没有 Claude Code？** 跑一行 `docker run -p 7891:7891 cft0808/edict` 即可体验完整看板 Demo（预置模拟数据）。
 
 ---
 
@@ -271,7 +271,7 @@ docker compose up
 ### 完整安装
 
 #### 前置条件
-- [OpenClaw](https://openclaw.ai) 已安装
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 已安装
 - Python 3.9+
 - macOS / Linux
 
@@ -286,7 +286,7 @@ chmod +x install.sh && ./install.sh
 安装脚本自动完成：
 - ✅ 创建全量 Agent Workspace（含太子/吏部/早朝，兼容历史 main）
 - ✅ 写入各省部 SOUL.md（角色人格 + 工作流规则 + 数据清洗规范）
-- ✅ 注册 Agent 及权限矩阵到 `openclaw.json`
+- ✅ 注册 Agent 及权限矩阵到 `.claude/settings.json`
 - ✅ 构建 React 前端（需 Node.js 18+，如未安装则跳过）
 - ✅ 初始化数据目录 + 首次数据同步
 - ✅ 重启 Gateway 使配置生效
@@ -410,7 +410,7 @@ edict/
 │   ├── run_loop.sh             # 数据刷新循环（每 15 秒）
 │   ├── kanban_update.py        # 看板 CLI（含旨意数据清洗 + 标题校验）
 │   ├── skill_manager.py        # Skill 管理工具（远程/本地 Skills 添加、更新、移除）
-│   ├── sync_from_openclaw_runtime.py
+│   ├── sync_from_claude_runtime.py
 │   ├── sync_agent_config.py
 │   ├── sync_officials_stats.py
 │   ├── fetch_morning_news.py
@@ -486,7 +486,7 @@ edict/
 python3 scripts/skill_manager.py add-remote \
   --agent zhongshu \
   --name code_review \
-  --source https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md \
+  --source https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md \
   --description "代码审查技能"
 
 # 一键导入官方 skills 库到指定 agents
@@ -519,7 +519,7 @@ curl -X POST http://localhost:7891/api/add-remote-skill \
 curl http://localhost:7891/api/remote-skills-list
 ```
 
-**官方 Skills Hub：** https://github.com/openclaw-ai/skills-hub
+**官方 Skills Hub：** https://github.com/edict-ai/skills-hub（待迁移）
 
 支持的 Skills：
 - `code_review` — 代码审查（Python/JS/Go）
@@ -592,14 +592,14 @@ curl -s http://127.0.0.1:7891/api/agents-status | python3 -m json.tool
 
 2. **检查 Gateway 日志**：
 ```bash
-ls /tmp/openclaw/ | tail -5          # 找到最新日志
-grep -i "error\|fail\|unknown" /tmp/openclaw/openclaw-*.log | tail -20
+ls /tmp/claude/ | tail -5          # 找到最新日志
+grep -i "error\|fail\|unknown" /tmp/claude/claude-*.log | tail -20
 ```
 
 3. **常见原因**：
    - Agent ID 不匹配（已在 v1.2 修复：`main` → `taizi`）
    - LLM provider 超时（增加了自动重试）
-   - 僵尸 Agent 进程（运行 `ps aux | grep openclaw` 检查）
+   - 僵尸 Agent 进程（运行 `ps aux | grep claude` 检查）
 
 4. **强制重试**：
 ```bash
@@ -636,7 +636,7 @@ docker compose up
 **排查**：
 ```bash
 # 测试网络连通性
-curl -I https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md
+curl -I https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md  # 待迁移
 
 # 如果超时，使用代理
 export https_proxy=http://your-proxy:port
@@ -749,7 +749,7 @@ python3 scripts/skill_manager.py import-official-hub --agents zhongshu
 
 ## 📄 License
 
-[MIT](LICENSE) · 由 [OpenClaw](https://openclaw.ai) 社区构建
+[MIT](LICENSE) · 基于 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 构建
 
 ---
 

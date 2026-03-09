@@ -5,7 +5,7 @@ labels: bug
 ---
 
 ## 环境
-- OpenClaw 版本：
+- Claude Code 版本：
 - 操作系统：
 - Python 版本：
 

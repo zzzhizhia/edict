@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/OpenClaw-Required-blue?style=flat-square" alt="OpenClaw">
+  <img src="https://img.shields.io/badge/Claude_Code-Required-blue?style=flat-square" alt="Claude Code">
   <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Agents-12_Specialized-8B5CF6?style=flat-square" alt="Agents">
   <img src="https://img.shields.io/badge/Dashboard-Real--time-F59E0B?style=flat-square" alt="Dashboard">
@@ -51,7 +51,7 @@
 </p>
 </details>
 
-> 🐳 **No OpenClaw?** Run `docker run -p 7891:7891 cft0808/edict` to try the full dashboard with simulated data.
+> 🐳 **No Claude Code?** Run `docker run -p 7891:7891 cft0808/edict` to try the full dashboard with simulated data.
 
 ---
 
@@ -195,7 +195,7 @@ Open http://localhost:7891
 
 ### Full Install
 
-**Prerequisites:** [OpenClaw](https://openclaw.ai) · Python 3.9+ · macOS/Linux
+**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) · Python 3.9+ · macOS/Linux
 
 ```bash
 git clone https://github.com/cft0808/edict.git
@@ -204,9 +204,9 @@ chmod +x install.sh && ./install.sh
 ```
 
 The installer automatically:
-- Creates workspaces for all departments (`~/.openclaw/workspace-*`, including Crown Prince/HR/Briefing)
+- Creates agent configs for all departments (`~/.claude/agents/*.md`, including Crown Prince/HR/Briefing)
 - Writes SOUL.md personality files for each department
-- Registers agents + permission matrix in `openclaw.json`
+- Registers agents + permission matrix in `.claude/settings.json`
 - Initializes data directory + first sync
 - Restarts Gateway
 
@@ -408,7 +408,7 @@ Each case includes: Full command → Planning proposal → Review feedback → M
 
 ## 📄 License
 
-[MIT](LICENSE) · Built by the [OpenClaw](https://openclaw.ai) community
+[MIT](LICENSE) · Built with [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 
 ---
 

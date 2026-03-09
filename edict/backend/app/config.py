@@ -23,10 +23,9 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production"
     debug: bool = False
 
-    # ── OpenClaw ──
-    openclaw_gateway_url: str = "http://localhost:18789"
-    openclaw_bin: str = "openclaw"
-    openclaw_project_dir: str | None = None
+    # ── Claude Code ──
+    claude_code_bin: str = "claude"
+    claude_code_project_dir: str | None = None
 
     # ── Legacy 兼容 ──
     legacy_data_dir: str = "../data"

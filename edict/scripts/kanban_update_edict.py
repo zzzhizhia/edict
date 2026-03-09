@@ -91,7 +91,7 @@ def _is_valid_task_title(title):
 
 
 def _infer_agent_id():
-    for k in ('OPENCLAW_AGENT_ID', 'OPENCLAW_AGENT', 'AGENT_ID'):
+    for k in ('CLAUDE_AGENT_ID', 'CLAUDE_AGENT', 'AGENT_ID'):
         v = (os.environ.get(k) or '').strip()
         if v:
             return v

@@ -17,13 +17,13 @@ python3 dashboard/server.py
 python3 scripts/skill_manager.py add-remote \
   --agent zhongshu \
   --name code_review \
-  --source https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md \
+  --source https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md \
   --description "代码审查能力"
 
 # 输出:
 # ⏳ 正在从 https://raw.githubusercontent.com/... 下载...
 # ✅ 技能 code_review 已添加到 zhongshu
-#    路径: /Users/xxx/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md
+#    路径: /Users/xxx/.claude/agents/zhongshu/skills/code_review/SKILL.md
 #    大小: 2048 字节
 ```
 
@@ -54,7 +54,7 @@ curl http://localhost:7891/api/remote-skills-list | jq .
 #       "agentId": "zhongshu",
 #       "sourceUrl": "https://raw.githubusercontent.com/...",
 #       "description": "代码审查能力",
-#       "localPath": "/Users/xxx/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md",
+#       "localPath": "/Users/xxx/.claude/agents/zhongshu/skills/code_review/SKILL.md",
 #       "addedAt": "2026-03-02T14:30:00Z",
 #       "lastUpdated": "2026-03-02T14:30:00Z",
 #       "status": "valid"
@@ -94,7 +94,7 @@ python3 scripts/skill_manager.py update-remote \
 # ⏳ 正在从 https://raw.githubusercontent.com/... 下载...
 # ✅ 技能 code_review 已添加到 zhongshu
 # ✅ 技能已更新
-#    路径: /Users/xxx/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md
+#    路径: /Users/xxx/.claude/agents/zhongshu/skills/code_review/SKILL.md
 #    大小: 2156 字节
 ```
 
@@ -121,7 +121,7 @@ python3 scripts/skill_manager.py remove-remote \
 4. 填写表单：
    - **Agent**: 从下拉列表选择（如 zhongshu）
    - **Skill 名称**: 输入内部 ID 如 `code_review`
-   - **远程 URL**: 粘贴 GitHub URL 如 `https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md`
+   - **远程 URL**: 粘贴 GitHub URL 如 `https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md`
    - **中文描述**: 可选，如 `代码审查能力`
 5. 点击 **导入** 按钮
 6. 等待 1-2 秒，看到 ✅ 成功提示
@@ -227,7 +227,7 @@ curl -X POST http://localhost:7891/api/add-remote-skill \
   "skillName": "code_review",
   "agentId": "zhongshu",
   "source": "https://raw.githubusercontent.com/...",
-  "localPath": "/Users/xxx/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md",
+  "localPath": "/Users/xxx/.claude/agents/zhongshu/skills/code_review/SKILL.md",
   "size": 2048,
   "addedAt": "2026-03-02T14:30:00Z"
 }
@@ -251,7 +251,7 @@ curl http://localhost:7891/api/remote-skills-list
       "agentId": "zhongshu",
       "sourceUrl": "https://raw.githubusercontent.com/...",
       "description": "代码审查能力",
-      "localPath": "/Users/xxx/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md",
+      "localPath": "/Users/xxx/.claude/agents/zhongshu/skills/code_review/SKILL.md",
       "addedAt": "2026-03-02T14:30:00Z",
       "lastUpdated": "2026-03-02T14:30:00Z",
       "status": "valid"
@@ -323,7 +323,7 @@ description: 描述
 python3 scripts/skill_manager.py list-remote
 
 # 检查本地文件
-ls -la ~/.openclaw/workspace-zhongshu/skills/
+ls -la ~/.claude/agents/zhongshu/skills/
 ```
 
 ---

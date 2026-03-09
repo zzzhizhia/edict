@@ -1,4 +1,4 @@
-"""Dispatch Worker — 消费 task.dispatch 事件，执行 OpenClaw agent 调用。
+"""Dispatch Worker — 消费 task.dispatch 事件，执行 Claude Code agent 调用。
 
 核心解决旧架构痛点：
 - 旧: daemon 线程 + subprocess.run → kill -9 丢失一切
@@ -6,7 +6,7 @@
 
 流程:
 1. 从 task.dispatch stream 消费事件
-2. 调用 OpenClaw CLI: `openclaw agent --agent xxx -m "..."`
+2. 调用 Claude Code CLI: `claude -p --agent xxx "..."`
 3. 解析 agent 输出（kanban_update.py 调用结果）
 4. ACK 事件
 """
@@ -35,7 +35,7 @@ CONSUMER = "disp-1"
 
 
 class DispatchWorker:
-    """Agent 派发 Worker — 调用 OpenClaw CLI 执行 agent 任务。"""
+    """Agent 派发 Worker — 调用 Claude Code CLI 执行 agent 任务。"""
 
     def __init__(self, max_concurrent: int = 3):
         self.bus = EventBus()
@@ -110,7 +110,7 @@ class DispatchWorker:
             )
 
             try:
-                result = await self._call_openclaw(agent, message, task_id, trace_id)
+                result = await self._call_claude_code(agent, message, task_id, trace_id)
 
                 # 发布 agent 输出
                 await self.bus.publish(
@@ -141,19 +141,19 @@ class DispatchWorker:
                 log.error(f"❌ Dispatch failed: task {task_id} → {agent}: {e}", exc_info=True)
                 # 不 ACK → Redis 会重新投递给其他消费者
 
-    async def _call_openclaw(
+    async def _call_claude_code(
         self,
         agent: str,
         message: str,
         task_id: str,
         trace_id: str,
     ) -> dict:
-        """异步调用 OpenClaw CLI — 在线程池中执行。"""
+        """异步调用 Claude Code CLI — 在线程池中执行。"""
         settings = get_settings()
         cmd = [
-            "openclaw", "agent",
+            "claude", "-p",
             "--agent", agent,
-            "-m", message,
+            message,
         ]
 
         env = os.environ.copy()
@@ -171,7 +171,7 @@ class DispatchWorker:
                     text=True,
                     timeout=300,
                     env=env,
-                    cwd=settings.openclaw_project_dir or None,
+                    cwd=settings.claude_code_project_dir or None,
                 )
                 return {
                     "returncode": proc.returncode,
@@ -181,7 +181,7 @@ class DispatchWorker:
             except subprocess.TimeoutExpired:
                 return {"returncode": -1, "stdout": "", "stderr": "TIMEOUT after 300s"}
             except FileNotFoundError:
-                return {"returncode": -1, "stdout": "", "stderr": "openclaw command not found"}
+                return {"returncode": -1, "stdout": "", "stderr": "claude command not found"}
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _run)

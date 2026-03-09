@@ -11,7 +11,7 @@
   ├─ 制度约束：不可越级、状态严格递进、门下必审议
   └─ 质量保障：可封驳反工、实时可观测、紧急可干预
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-技术层：OpenClaw多Agent编排 (Multi-Agent Orchestration)
+技术层：Claude Code多Agent编排 (Multi-Agent Orchestration)
   ├─ 状态机：9个状态（Pending → Taizi → Zhongshu → Menxia → Assigned → Doing/Next → Review → Done/Cancelled）
   ├─ 数据融合：flow_log + progress_log + session JSONL → unified activity stream
   ├─ 权限矩阵：严格的subagent调用权限控制
@@ -408,7 +408,7 @@ _STATE_AGENT_MAP = {
    ├─ spawn daemon thread
    ├─ 标记 _scheduler.lastDispatchStatus = 'queued'
    ├─ 检查 Gateway 进程是否开启
-   ├─ 运行 openclaw agent --agent {id} -m "{msg}" --deliver --timeout 300
+   ├─ 运行 claude -p --agent {id} "{msg}"
    ├─ 重试最多2次（失败间隔5秒退避）
    ├─ 更新 _scheduler 状态和错误信息
    └─ flow_log 记录派发结果
@@ -430,7 +430,7 @@ _STATE_AGENT_MAP = {
 
 ### 2.2 权限矩阵与Subagent调用
 
-#### 权限定义（openclaw.json 中配置）
+#### 权限定义（.claude/settings.json 中配置）
 
 ```json
 {
@@ -518,8 +518,8 @@ def can_dispatch_to(from_agent, to_agent):
 
 3️⃣ session JSONL（新增！）
    └─ Agent 的内部思考过程（thinking）、工具调用（tool_result）、对话历史（user）
-   └─ 数据源：~/.openclaw/agents/{agent_id}/sessions/*.jsonl
-   └─ 来自：OpenClaw框架自动记录，Agent无需主动操作
+   └─ 数据源：~/.claude/agents/{agent_id}/sessions/*.jsonl
+   └─ 来自：Claude Code框架自动记录，Agent无需主动操作
    └─ 周期：消息级别，粒度最细
 ```
 
@@ -1092,7 +1092,7 @@ python3 scripts/kanban_update.py progress \
 #       {"id": "3", "title": "工部咨询", "status": "in-progress"},
 #       {"id": "4", "title": "待门下审议", "status": "not-started"}
 #     ],
-#     "tokens": (自动从 openclaw 会话数据读取),
+#     "tokens": (自动从 claude 会话数据读取),
 #     "cost": (自动计算),
 #     "elapsed": (自动计算)
 #   }

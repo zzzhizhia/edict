@@ -1,19 +1,18 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════
-# 三省六部 · OpenClaw Multi-Agent System 一键安装脚本
+# 三省六部 · Claude Code Multi-Agent System 一键安装脚本
 # ══════════════════════════════════════════════════════════════
 set -e
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OC_HOME="$HOME/.openclaw"
-OC_CFG="$OC_HOME/openclaw.json"
+CLAUDE_HOME="$HOME/.claude"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 banner() {
   echo ""
   echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-  echo -e "${BLUE}║  🏛️  三省六部 · OpenClaw Multi-Agent    ║${NC}"
+  echo -e "${BLUE}║  🏛️  三省六部 · Claude Code Multi-Agent  ║${NC}"
   echo -e "${BLUE}║       安装向导                            ║${NC}"
   echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
   echo ""
@@ -27,157 +26,112 @@ info()  { echo -e "${BLUE}ℹ️  $1${NC}"; }
 # ── Step 0: 依赖检查 ──────────────────────────────────────────
 check_deps() {
   info "检查依赖..."
-  
-  if ! command -v openclaw &>/dev/null; then
-    error "未找到 openclaw CLI。请先安装 OpenClaw: https://openclaw.ai"
+
+  if ! command -v claude &>/dev/null; then
+    error "未找到 claude CLI。请先安装 Claude Code: https://docs.anthropic.com/en/docs/claude-code"
     exit 1
   fi
-  log "OpenClaw CLI: $(openclaw --version 2>/dev/null || echo 'OK')"
+  log "Claude Code CLI: $(claude --version 2>/dev/null || echo 'OK')"
 
   if ! command -v python3 &>/dev/null; then
     error "未找到 python3"
     exit 1
   fi
   log "Python3: $(python3 --version)"
-
-  if [ ! -f "$OC_CFG" ]; then
-    error "未找到 openclaw.json。请先运行 openclaw 完成初始化。"
-    exit 1
-  fi
-  log "openclaw.json: $OC_CFG"
 }
 
 # ── Step 0.5: 备份已有 Agent 数据 ──────────────────────────────
 backup_existing() {
-  AGENTS_DIR="$OC_HOME"
-  BACKUP_DIR="$OC_HOME/backups/pre-install-$(date +%Y%m%d-%H%M%S)"
+  AGENTS_DIR="$CLAUDE_HOME/agents"
+  BACKUP_DIR="$CLAUDE_HOME/backups/pre-install-$(date +%Y%m%d-%H%M%S)"
   HAS_EXISTING=false
 
-  # 检查是否有已存在的 workspace
-  for d in "$AGENTS_DIR"/workspace-*/; do
-    if [ -d "$d" ]; then
-      HAS_EXISTING=true
-      break
-    fi
-  done
-
-  if $HAS_EXISTING; then
-    info "检测到已有 Agent Workspace，自动备份中..."
-    mkdir -p "$BACKUP_DIR"
-
-    # 备份所有 workspace 目录
-    for d in "$AGENTS_DIR"/workspace-*/; do
-      if [ -d "$d" ]; then
-        ws_name=$(basename "$d")
-        cp -R "$d" "$BACKUP_DIR/$ws_name"
+  # 检查是否有已存在的 agent .md 文件
+  if [ -d "$AGENTS_DIR" ]; then
+    for f in "$AGENTS_DIR"/*.md; do
+      if [ -f "$f" ]; then
+        HAS_EXISTING=true
+        break
       fi
     done
+  fi
 
-    # 备份 openclaw.json
-    if [ -f "$OC_CFG" ]; then
-      cp "$OC_CFG" "$BACKUP_DIR/openclaw.json"
-    fi
+  if $HAS_EXISTING; then
+    info "检测到已有 Agent 配置，自动备份中..."
+    mkdir -p "$BACKUP_DIR"
 
-    # 备份 agents 目录（agent 注册信息）
-    if [ -d "$AGENTS_DIR/agents" ]; then
-      cp -R "$AGENTS_DIR/agents" "$BACKUP_DIR/agents"
-    fi
+    # 备份所有 agent .md 文件
+    cp -R "$AGENTS_DIR" "$BACKUP_DIR/agents"
 
     log "已备份到: $BACKUP_DIR"
-    info "如需恢复，运行: cp -R $BACKUP_DIR/workspace-* $AGENTS_DIR/"
+    info "如需恢复，运行: cp -R $BACKUP_DIR/agents/* $AGENTS_DIR/"
   fi
 }
 
-# ── Step 1: 创建 Workspace ──────────────────────────────────
+# ── Step 1: 创建 Agent 配置 ──────────────────────────────────
 create_workspaces() {
-  info "创建 Agent Workspace..."
-  
+  info "创建 Agent 配置..."
+
+  AGENTS_DIR="$CLAUDE_HOME/agents"
+  mkdir -p "$AGENTS_DIR"
+
   AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
   for agent in "${AGENTS[@]}"; do
-    ws="$OC_HOME/workspace-$agent"
-    mkdir -p "$ws/skills"
     if [ -f "$REPO_DIR/agents/$agent/SOUL.md" ]; then
-      if [ -f "$ws/SOUL.md" ]; then
-        # 已存在的 SOUL.md，先备份再覆盖
-        cp "$ws/SOUL.md" "$ws/SOUL.md.bak.$(date +%Y%m%d-%H%M%S)"
-        warn "已备份旧 SOUL.md → $ws/SOUL.md.bak.*"
+      AGENT_MD="$AGENTS_DIR/$agent.md"
+      if [ -f "$AGENT_MD" ]; then
+        # 已存在的配置，先备份再覆盖
+        cp "$AGENT_MD" "$AGENT_MD.bak.$(date +%Y%m%d-%H%M%S)"
+        warn "已备份旧配置 → $AGENT_MD.bak.*"
       fi
-      sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/agents/$agent/SOUL.md" > "$ws/SOUL.md"
+
+      # 生成 agent .md 文件（frontmatter + SOUL.md 内容）
+      SOUL_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/agents/$agent/SOUL.md")
+      cat > "$AGENT_MD" << AGENT_EOF
+---
+name: ${agent}
+description: 三省六部 ${agent} agent
+tools: Read, Grep, Glob, Bash, Edit, Write
+model: sonnet
+---
+
+${SOUL_CONTENT}
+AGENT_EOF
     fi
-    log "Workspace 已创建: $ws"
-  done
-
-  # 通用 AGENTS.md（工作协议）
-  for agent in "${AGENTS[@]}"; do
-    cat > "$OC_HOME/workspace-$agent/AGENTS.md" << 'AGENTS_EOF'
-# AGENTS.md · 工作协议
-
-1. 接到任务先回复"已接旨"。
-2. 输出必须包含：任务ID、结果、证据/文件路径、阻塞项。
-3. 需要协作时，回复尚书省请求转派，不跨部直连。
-4. 涉及删除/外发动作必须明确标注并等待批准。
-AGENTS_EOF
+    log "Agent 配置已创建: $AGENTS_DIR/$agent.md"
   done
 }
 
-# ── Step 2: 注册 Agents ─────────────────────────────────────
+# ── Step 2: 确认 Agents 就位 ─────────────────────────────────
 register_agents() {
-  info "注册三省六部 Agents..."
+  info "确认三省六部 Agents 配置..."
 
-  # 备份配置
-  cp "$OC_CFG" "$OC_CFG.bak.sansheng-$(date +%Y%m%d-%H%M%S)"
-  log "已备份配置: $OC_CFG.bak.*"
+  AGENTS_DIR="$CLAUDE_HOME/agents"
+  AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
 
-  python3 << 'PYEOF'
-import json, pathlib, sys
+  all_ok=true
+  for agent in "${AGENTS[@]}"; do
+    if [ -f "$AGENTS_DIR/$agent.md" ]; then
+      log "  ✓ $agent.md"
+    else
+      warn "  ✗ $agent.md 未找到"
+      all_ok=false
+    fi
+  done
 
-cfg_path = pathlib.Path.home() / '.openclaw' / 'openclaw.json'
-cfg = json.loads(cfg_path.read_text())
-
-AGENTS = [
-  {"id": "taizi",    "subagents": {"allowAgents": ["zhongshu"]}},
-    {"id": "zhongshu", "subagents": {"allowAgents": ["menxia", "shangshu"]}},
-    {"id": "menxia",   "subagents": {"allowAgents": ["shangshu", "zhongshu"]}},
-  {"id": "shangshu", "subagents": {"allowAgents": ["zhongshu", "menxia", "hubu", "libu", "bingbu", "xingbu", "gongbu", "libu_hr"]}},
-    {"id": "hubu",     "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "libu",     "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "bingbu",   "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "xingbu",   "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "gongbu",   "subagents": {"allowAgents": ["shangshu"]}},
-  {"id": "libu_hr",  "subagents": {"allowAgents": ["shangshu"]}},
-  {"id": "zaochao",  "subagents": {"allowAgents": []}},
-]
-
-agents_cfg = cfg.setdefault('agents', {})
-agents_list = agents_cfg.get('list', [])
-existing_ids = {a['id'] for a in agents_list}
-
-added = 0
-for ag in AGENTS:
-    ag_id = ag['id']
-    ws = str(pathlib.Path.home() / f'.openclaw/workspace-{ag_id}')
-    if ag_id not in existing_ids:
-        entry = {'id': ag_id, 'workspace': ws, **{k:v for k,v in ag.items() if k!='id'}}
-        agents_list.append(entry)
-        added += 1
-        print(f'  + added: {ag_id}')
-    else:
-        print(f'  ~ exists: {ag_id} (skipped)')
-
-agents_cfg['list'] = agents_list
-cfg_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2))
-print(f'Done: {added} agents added')
-PYEOF
-
-  log "Agents 注册完成"
+  if $all_ok; then
+    log "所有 Agent 配置已就位"
+  else
+    warn "部分 Agent 配置缺失，请检查 agents/ 目录下的 SOUL.md 文件"
+  fi
 }
 
 # ── Step 3: 初始化 Data ─────────────────────────────────────
 init_data() {
   info "初始化数据目录..."
-  
+
   mkdir -p "$REPO_DIR/data"
-  
+
   # 初始化空文件
   for f in live_status.json agent_config.json model_change_log.json; do
     if [ ! -f "$REPO_DIR/data/$f" ]; then
@@ -253,21 +207,11 @@ build_frontend() {
 first_sync() {
   info "执行首次数据同步..."
   cd "$REPO_DIR"
-  
+
   REPO_DIR="$REPO_DIR" python3 scripts/sync_agent_config.py || warn "sync_agent_config 有警告"
   python3 scripts/refresh_live_data.py || warn "refresh_live_data 有警告"
-  
-  log "首次同步完成"
-}
 
-# ── Step 6: 重启 Gateway ────────────────────────────────────
-restart_gateway() {
-  info "重启 OpenClaw Gateway..."
-  if openclaw gateway restart 2>/dev/null; then
-    log "Gateway 重启成功"
-  else
-    warn "Gateway 重启失败，请手动重启：openclaw gateway restart"
-  fi
+  log "首次同步完成"
 }
 
 # ── Main ────────────────────────────────────────────────────
@@ -279,7 +223,6 @@ register_agents
 init_data
 build_frontend
 first_sync
-restart_gateway
 
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"

@@ -8,8 +8,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message
 
 BASE = pathlib.Path(__file__).resolve().parent.parent
 DATA = BASE / 'data'
-AGENTS_ROOT = pathlib.Path.home() / '.openclaw' / 'agents'
-OPENCLAW_CFG = pathlib.Path.home() / '.openclaw' / 'openclaw.json'
+AGENTS_ROOT = pathlib.Path.home() / '.claude' / 'projects'
+CLAUDE_SETTINGS = pathlib.Path.home() / '.claude' / 'settings.json'
 
 # Anthropic 定价（每1M token，美元）
 MODEL_PRICING = {
@@ -41,14 +41,14 @@ def rj(p, d):
     except Exception: return d
 
 
-# Pre-load openclaw config once (avoid re-reading per agent)
-_OPENCLAW_CACHE = None
+# Pre-load claude settings once (avoid re-reading per agent)
+_CLAUDE_CACHE = None
 
-def _load_openclaw_cfg():
-    global _OPENCLAW_CACHE
-    if _OPENCLAW_CACHE is None:
-        _OPENCLAW_CACHE = rj(OPENCLAW_CFG, {})
-    return _OPENCLAW_CACHE
+def _load_claude_settings():
+    global _CLAUDE_CACHE
+    if _CLAUDE_CACHE is None:
+        _CLAUDE_CACHE = rj(CLAUDE_SETTINGS, {})
+    return _CLAUDE_CACHE
 
 
 def normalize_model(model_value, fallback='anthropic/claude-sonnet-4-6'):
@@ -59,7 +59,7 @@ def normalize_model(model_value, fallback='anthropic/claude-sonnet-4-6'):
     return fallback
 
 def get_model(agent_id):
-    cfg = _load_openclaw_cfg()
+    cfg = _load_claude_settings()
     default = normalize_model(cfg.get('agents',{}).get('defaults',{}).get('model',{}), 'anthropic/claude-sonnet-4-6')
     for a in cfg.get('agents',{}).get('list',[]):
         if a.get('id') == agent_id:

@@ -859,7 +859,7 @@ const API = (location.origin === 'file://' ? 'http://127.0.0.1:7891' : location.
 let liveStatus=null, agentConfig=null, activeTab='edicts', countdown=5;
 let globalScanActions = [], globalScanDetailOpen = false;
 let globalScanCheckedAt = '', globalScanCount = 0;
-const GLOBAL_SCAN_STORAGE_KEY = 'openclaw_global_scan_state_v1';
+const GLOBAL_SCAN_STORAGE_KEY = 'edict_global_scan_state_v1';
 
 function persistGlobalScanState(meta = {}){
   try{
@@ -1849,7 +1849,7 @@ function openAddSkillForm(agentId, agentLabel){
     <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:18px;font-size:12px;line-height:1.7;color:var(--muted)">
       <b style="color:var(--text)">📋 Skill 规范说明</b><br>
       • 技能名称使用<b style="color:var(--text)">小写英文 + 连字符</b>，如 <code style="background:var(--bg);padding:2px 6px;border-radius:4px">data-analysis</code>、<code style="background:var(--bg);padding:2px 6px;border-radius:4px">code-review</code><br>
-      • 创建后会在 <code style="background:var(--bg);padding:2px 6px;border-radius:4px">~/.openclaw/workspace-${esc(agentId)}/skills/{name}/SKILL.md</code> 生成模板文件<br>
+      • 创建后会在 <code style="background:var(--bg);padding:2px 6px;border-radius:4px">~/.claude/skills/${esc(agentId)}/{name}/SKILL.md</code> 生成模板文件<br>
       • SKILL.md 使用 <b style="color:var(--text)">YAML frontmatter</b> 头部（name + description），正文为 Markdown 格式<br>
       • 技能会在 agent 收到相关任务时<b style="color:var(--text)">自动激活</b>，无需手动触发
     </div>
@@ -2768,11 +2768,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementB
 
 /* ══ COURT CEREMONY (上朝仪式感) ══ */
 function showCeremony(){
-  const lastOpen = localStorage.getItem('openclaw_court_date');
+  const lastOpen = localStorage.getItem('edict_court_date');
   const today = new Date().toISOString().substring(0,10);
-  const pref = JSON.parse(localStorage.getItem('openclaw_court_pref')||'{"enabled":true}');
+  const pref = JSON.parse(localStorage.getItem('edict_court_pref')||'{"enabled":true}');
   if(!pref.enabled || lastOpen === today) return;
-  localStorage.setItem('openclaw_court_date', today);
+  localStorage.setItem('edict_court_date', today);
   const el = document.getElementById('ceremony');
   el.style.display='flex';
   // Fill data from live status
@@ -3108,7 +3108,7 @@ async function executeTemplate(e, tplId){
   try{
     const st = await fetchJ(API+'/agents-status');
     if(st.ok && st.gateway && !st.gateway.alive){
-      toast('⚠️ Gateway 未启动，任务将无法派发！请先运行 openclaw gateway start','err',6000);
+      toast('⚠️ Claude Code 未启动，任务将无法派发！请确保 claude 命令可用','err',6000);
       if(!confirm('Gateway 未启动，任务创建后将无法自动派发。是否仍然继续？')) return;
     }
   }catch(ex){/* 检测失败不阻塞创建 */}

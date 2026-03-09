@@ -12,7 +12,7 @@
 ### 🐛 报告 Bug
 
 请使用 [Bug Report](.github/ISSUE_TEMPLATE/bug_report.md) 模板提交 Issue，包含：
-- OpenClaw 版本（`openclaw --version`）
+- Claude Code 版本（`claude --version`）
 - Python 版本（`python3 --version`）
 - 操作系统
 - 复现步骤（越详细越好）
@@ -52,7 +52,7 @@ git push origin feat/my-awesome-feature
 ## 🏗️ 开发环境
 
 ### 前置条件
-- [OpenClaw](https://openclaw.ai) 已安装
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 已安装
 - Python 3.9+
 - macOS / Linux
 

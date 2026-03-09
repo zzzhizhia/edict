@@ -69,7 +69,7 @@
 
 ### 🐳 Docker Compose + Demo 镜像
 - [ ] `docker run` 一行命令体验完整看板（预置模拟数据）
-- [ ] Docker Compose 编排（看板 + 数据同步 + OpenClaw Gateway）
+- [ ] Docker Compose 编排（看板 + 数据同步 + Claude Code）
 - [ ] CI/CD 自动构建推送镜像
 - **难度**：⭐⭐ | **适合第一次贡献**
 
@@ -85,7 +85,7 @@
 - **难度**：⭐⭐
 
 ### 🏪 ClawHub 上架
-- [ ] 核心 Skills 提交到 OpenClaw 官方 Skill 市场
+- [ ] 核心 Skills 提交到 Claude Code 官方 Skill 市场
 - [ ] 一键安装三省六部 Skill Pack
 - **难度**：⭐
 

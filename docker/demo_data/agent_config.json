@@ -83,23 +83,23 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-shangshu",
+      "workspace": "/Users/bingsen/.claude/agents/shangshu",
       "skills": [
         {
           "name": "dispatch",
-          "path": "/Users/bingsen/.openclaw/workspace-shangshu/skills/dispatch/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/shangshu/skills/dispatch/SKILL.md",
           "exists": true,
           "description": "---"
         },
         {
           "name": "kanban-local",
-          "path": "/Users/bingsen/.openclaw/workspace-shangshu/skills/kanban-local/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/shangshu/skills/kanban-local/SKILL.md",
           "exists": true,
           "description": "---"
         },
         {
           "name": "organization-governance",
-          "path": "/Users/bingsen/.openclaw/workspace-shangshu/skills/organization-governance/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/shangshu/skills/organization-governance/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -123,11 +123,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-zhongshu",
+      "workspace": "/Users/bingsen/.claude/agents/zhongshu",
       "skills": [
         {
           "name": "planning",
-          "path": "/Users/bingsen/.openclaw/workspace-zhongshu/skills/planning/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/zhongshu/skills/planning/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -146,11 +146,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-menxia",
+      "workspace": "/Users/bingsen/.claude/agents/menxia",
       "skills": [
         {
           "name": "review",
-          "path": "/Users/bingsen/.openclaw/workspace-menxia/skills/review/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/menxia/skills/review/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -169,11 +169,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-hubu",
+      "workspace": "/Users/bingsen/.claude/agents/hubu",
       "skills": [
         {
           "name": "data-analysis",
-          "path": "/Users/bingsen/.openclaw/workspace-hubu/skills/data-analysis/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/hubu/skills/data-analysis/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -191,11 +191,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-libu",
+      "workspace": "/Users/bingsen/.claude/agents/libu",
       "skills": [
         {
           "name": "doc-writer",
-          "path": "/Users/bingsen/.openclaw/workspace-libu/skills/doc-writer/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/libu/skills/doc-writer/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -213,11 +213,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-bingbu",
+      "workspace": "/Users/bingsen/.claude/agents/bingbu",
       "skills": [
         {
           "name": "coding",
-          "path": "/Users/bingsen/.openclaw/workspace-bingbu/skills/coding/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/bingbu/skills/coding/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -235,11 +235,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-xingbu",
+      "workspace": "/Users/bingsen/.claude/agents/xingbu",
       "skills": [
         {
           "name": "security-review",
-          "path": "/Users/bingsen/.openclaw/workspace-xingbu/skills/security-review/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/xingbu/skills/security-review/SKILL.md",
           "exists": true,
           "description": "---"
         }
@@ -257,11 +257,11 @@
       "model": "anthropic/claude-sonnet-4-6",
       "defaultModel": "anthropic/claude-sonnet-4-6",
       "isDefaultModel": true,
-      "workspace": "/Users/bingsen/.openclaw/workspace-gongbu",
+      "workspace": "/Users/bingsen/.claude/agents/gongbu",
       "skills": [
         {
           "name": "ops",
-          "path": "/Users/bingsen/.openclaw/workspace-gongbu/skills/ops/SKILL.md",
+          "path": "/Users/bingsen/.claude/agents/gongbu/skills/ops/SKILL.md",
           "exists": true,
           "description": "---"
         }

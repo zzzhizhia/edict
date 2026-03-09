@@ -27,7 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import now_iso, safe_name, read_json
 
-OCLAW_HOME = Path.home() / '.openclaw'
+CLAUDE_HOME = Path.home() / '.claude'
 
 
 def _download_file(url: str, timeout: int = 30, retries: int = 3) -> str:
@@ -35,7 +35,7 @@ def _download_file(url: str, timeout: int = 30, retries: int = 3) -> str:
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'OpenClaw-SkillManager/1.0'})
+            req = urllib.request.Request(url, headers={'User-Agent': 'Edict-SkillManager/1.0'})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 content = resp.read(10 * 1024 * 1024)  # 最多 10MB
                 return content.decode('utf-8')
@@ -76,7 +76,7 @@ def add_remote(agent_id: str, name: str, source_url: str, description: str = '')
         return False
     
     # 设置 workspace
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / name
     workspace.mkdir(parents=True, exist_ok=True)
     skill_md = workspace / 'SKILL.md'
     
@@ -118,15 +118,21 @@ def add_remote(agent_id: str, name: str, source_url: str, description: str = '')
 
 def list_remote() -> bool:
     """列出所有已添加的远程 skills"""
-    if not OCLAW_HOME.exists():
-        print('❌ OCLAW_HOME 不存在')
+    if not CLAUDE_HOME.exists():
+        print('❌ CLAUDE_HOME 不存在')
         return False
     
     remote_skills = []
     
-    for ws_dir in OCLAW_HOME.glob('workspace-*'):
-        agent_id = ws_dir.name.replace('workspace-', '')
-        skills_dir = ws_dir / 'skills'
+    skills_root = CLAUDE_HOME / 'skills'
+    if not skills_root.exists():
+        print('No skills found')
+        return True
+    for agent_dir in skills_root.iterdir():
+        if not agent_dir.is_dir():
+            continue
+        agent_id = agent_dir.name
+        skills_dir = agent_dir
         if not skills_dir.exists():
             continue
         
@@ -173,7 +179,7 @@ def update_remote(agent_id: str, name: str) -> bool:
         print(f'❌ 错误：agent_id 或 skill 名称含非法字符')
         return False
     
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / name
     source_json = workspace / '.source.json'
     
     if not source_json.exists():
@@ -200,7 +206,7 @@ def remove_remote(agent_id: str, name: str) -> bool:
         print(f'❌ 错误：agent_id 或 skill 名称含非法字符')
         return False
     
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / name
     source_json = workspace / '.source.json'
     
     if not source_json.exists():
@@ -218,12 +224,12 @@ def remove_remote(agent_id: str, name: str) -> bool:
 
 
 OFFICIAL_SKILLS_HUB = {
-    'code_review': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md',
-    'api_design': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/api_design/SKILL.md',
-    'security_audit': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/security_audit/SKILL.md',
-    'data_analysis': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/data_analysis/SKILL.md',
-    'doc_generation': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/doc_generation/SKILL.md',
-    'test_framework': 'https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/test_framework/SKILL.md',
+    'code_review': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md',
+    'api_design': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/api_design/SKILL.md',
+    'security_audit': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/security_audit/SKILL.md',
+    'data_analysis': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/data_analysis/SKILL.md',
+    'doc_generation': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/doc_generation/SKILL.md',
+    'test_framework': 'https://raw.githubusercontent.com/edict-ai/skills-hub/main/test_framework/SKILL.md',
 }
 
 SKILL_AGENT_MAPPING = {
@@ -272,7 +278,7 @@ def import_official_hub(agent_ids: list) -> bool:
         for f in failed:
             print(f'   - {f}')
         print(f'\n💡 排查建议:')
-        print(f'   1. 检查网络: curl -I https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md')
+        print(f'   1. 检查网络: curl -I https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md')
         print(f'   2. 设置代理: export https_proxy=http://your-proxy:port')
         print(f'   3. 单独重试: python3 scripts/skill_manager.py add-remote --agent <agent> --name <skill> --source <url>')
     return success == total

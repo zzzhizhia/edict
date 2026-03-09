@@ -25,7 +25,7 @@ from utils import validate_url
 log = logging.getLogger('server')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')
 
-OCLAW_HOME = pathlib.Path.home() / '.openclaw'
+CLAUDE_HOME = pathlib.Path.home() / '.claude'
 MAX_REQUEST_BODY = 1 * 1024 * 1024  # 1 MB
 ALLOWED_ORIGIN = None  # Set via --cors; None means restrict to localhost
 _DEFAULT_ORIGINS = {
@@ -199,8 +199,8 @@ def read_skill_content(agent_id, skill_name):
     if not sk:
         return {'ok': False, 'error': f'技能 {skill_name} 不存在'}
     skill_path = pathlib.Path(sk.get('path', '')).resolve()
-    # 路径遍历保护：确保路径在 OCLAW_HOME 或项目目录下
-    allowed_roots = (OCLAW_HOME.resolve(), BASE.parent.resolve())
+    # 路径遍历保护：确保路径在 CLAUDE_HOME 或项目目录下
+    allowed_roots = (CLAUDE_HOME.resolve(), BASE.parent.resolve(), pathlib.Path.home().resolve())
     if not any(str(skill_path).startswith(str(root)) for root in allowed_roots):
         return {'ok': False, 'error': '路径不在允许的目录范围内'}
     if not skill_path.exists():
@@ -218,7 +218,7 @@ def add_skill_to_agent(agent_id, skill_name, description, trigger=''):
         return {'ok': False, 'error': f'skill_name 含非法字符: {skill_name}'}
     if not _SAFE_NAME_RE.match(agent_id):
         return {'ok': False, 'error': f'agentId 含非法字符: {agent_id}'}
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / skill_name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / skill_name
     workspace.mkdir(parents=True, exist_ok=True)
     skill_md = workspace / 'SKILL.md'
     desc_line = description or skill_name
@@ -279,7 +279,7 @@ def add_remote_skill(agent_id, skill_name, source_url, description=''):
                 return {'ok': False, 'error': 'URL 无效或不安全（仅支持 HTTPS）'}
             
             # 从 URL 下载，带超时保护
-            req = Request(source_url, headers={'User-Agent': 'OpenClaw-SkillManager/1.0'})
+            req = Request(source_url, headers={'User-Agent': 'Edict-SkillManager/1.0'})
             try:
                 resp = urlopen(req, timeout=10)
                 content = resp.read(10 * 1024 * 1024).decode('utf-8')  # 最多 10MB
@@ -301,7 +301,7 @@ def add_remote_skill(agent_id, skill_name, source_url, description=''):
             if not local_path.exists():
                 return {'ok': False, 'error': f'本地文件不存在: {local_path}'}
             # 路径遍历防护
-            allowed_roots = (OCLAW_HOME.resolve(), BASE.parent.resolve())
+            allowed_roots = (CLAUDE_HOME.resolve(), BASE.parent.resolve(), pathlib.Path.home().resolve())
             if not any(str(local_path).startswith(str(root)) for root in allowed_roots):
                 return {'ok': False, 'error': '路径不在允许的目录范围内'}
             content = local_path.read_text()
@@ -329,7 +329,7 @@ def add_remote_skill(agent_id, skill_name, source_url, description=''):
             return {'ok': False, 'error': f'文件格式无效: {str(e)[:100]}'}
     
     # 创建本地目录
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / skill_name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / skill_name
     workspace.mkdir(parents=True, exist_ok=True)
     skill_md = workspace / 'SKILL.md'
     
@@ -371,12 +371,15 @@ def get_remote_skills_list():
     """列表所有已添加的远程 skills 及其源信息"""
     remote_skills = []
     
-    # 遍历所有 workspace
-    for ws_dir in OCLAW_HOME.glob('workspace-*'):
-        agent_id = ws_dir.name.replace('workspace-', '')
-        skills_dir = ws_dir / 'skills'
-        if not skills_dir.exists():
+    # 遍历所有 agent skills 目录
+    skills_root = CLAUDE_HOME / 'skills'
+    if not skills_root.exists():
+        return {'ok': True, 'remoteSkills': [], 'count': 0, 'listedAt': now_iso()}
+    for ws_dir in skills_root.iterdir():
+        if not ws_dir.is_dir():
             continue
+        agent_id = ws_dir.name
+        skills_dir = ws_dir
         
         for skill_dir in skills_dir.iterdir():
             if not skill_dir.is_dir():
@@ -421,7 +424,7 @@ def update_remote_skill(agent_id, skill_name):
     if not _SAFE_NAME_RE.match(skill_name):
         return {'ok': False, 'error': f'skillName 含非法字符: {skill_name}'}
     
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / skill_name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / skill_name
     source_json = workspace / '.source.json'
     skill_md = workspace / 'SKILL.md'
     
@@ -453,7 +456,7 @@ def remove_remote_skill(agent_id, skill_name):
     if not _SAFE_NAME_RE.match(skill_name):
         return {'ok': False, 'error': f'skillName 含非法字符: {skill_name}'}
     
-    workspace = OCLAW_HOME / f'workspace-{agent_id}' / 'skills' / skill_name
+    workspace = CLAUDE_HOME / 'skills' / agent_id / skill_name
     if not workspace.exists():
         return {'ok': False, 'error': f'技能不存在: {skill_name}'}
     
@@ -670,9 +673,9 @@ _AGENT_DEPTS = [
 
 
 def _check_gateway_alive():
-    """检测 Gateway 进程是否在运行。"""
+    """检测 claude 进程是否在运行。"""
     try:
-        result = subprocess.run(['pgrep', '-f', 'openclaw-gateway'],
+        result = subprocess.run(['pgrep', '-f', 'claude'],
                                 capture_output=True, text=True, timeout=5)
         return result.returncode == 0
     except Exception:
@@ -680,20 +683,15 @@ def _check_gateway_alive():
 
 
 def _check_gateway_probe():
-    """通过 HTTP probe 检测 Gateway 是否响应。"""
-    try:
-        from urllib.request import urlopen
-        resp = urlopen('http://127.0.0.1:18789/', timeout=3)
-        return resp.status == 200
-    except Exception:
-        return False
+    """简单探测（Claude Code 无独立 gateway，直接返回 False）。"""
+    return False
 
 
 def _get_agent_session_status(agent_id):
     """读取 Agent 的 sessions.json 获取活跃状态。
     返回: (last_active_ts_ms, session_count, is_busy)
     """
-    sessions_file = OCLAW_HOME / 'agents' / agent_id / 'sessions' / 'sessions.json'
+    sessions_file = CLAUDE_HOME / 'projects' / agent_id / 'sessions.json'
     if not sessions_file.exists():
         return 0, 0, False
     try:
@@ -715,10 +713,10 @@ def _get_agent_session_status(agent_id):
 
 
 def _check_agent_process(agent_id):
-    """检测是否有该 Agent 的 openclaw-agent 进程正在运行。"""
+    """检测是否有该 Agent 的 claude 进程正在运行。"""
     try:
         result = subprocess.run(
-            ['pgrep', '-f', f'openclaw.*--agent.*{agent_id}'],
+            ['pgrep', '-f', f'claude.*--agent.*{agent_id}'],
             capture_output=True, text=True, timeout=5
         )
         return result.returncode == 0
@@ -727,9 +725,9 @@ def _check_agent_process(agent_id):
 
 
 def _check_agent_workspace(agent_id):
-    """检查 Agent 工作空间是否存在。"""
-    ws = OCLAW_HOME / f'workspace-{agent_id}'
-    return ws.is_dir()
+    """检查 Agent 配置文件是否存在。"""
+    agent_md = CLAUDE_HOME / 'agents' / f'{agent_id}.md'
+    return agent_md.is_file()
 
 
 def get_agents_status():
@@ -742,7 +740,7 @@ def get_agents_status():
     - processAlive: 是否有进程在运行
     """
     gateway_alive = _check_gateway_alive()
-    gateway_probe = _check_gateway_probe() if gateway_alive else False
+    gateway_probe = False
 
     agents = []
     seen_ids = set()
@@ -760,9 +758,6 @@ def get_agents_status():
         if not has_workspace:
             status = 'unconfigured'
             status_label = '❌ 未配置'
-        elif not gateway_alive:
-            status = 'offline'
-            status_label = '🔴 Gateway 离线'
         elif process_alive or is_busy:
             status = 'running'
             status_label = '🟢 运行中'
@@ -811,7 +806,7 @@ def get_agents_status():
         'gateway': {
             'alive': gateway_alive,
             'probe': gateway_probe,
-            'status': '🟢 运行中' if gateway_probe else ('🟡 进程在但无响应' if gateway_alive else '🔴 未启动'),
+            'status': '🟢 claude 运行中' if gateway_alive else '🔴 claude 未检测到',
         },
         'agents': agents,
         'checkedAt': now_iso(),
@@ -825,15 +820,15 @@ def wake_agent(agent_id, message=''):
     if not _check_agent_workspace(agent_id):
         return {'ok': False, 'error': f'{agent_id} 工作空间不存在，请先配置'}
     if not _check_gateway_alive():
-        return {'ok': False, 'error': 'Gateway 未启动，请先运行 openclaw gateway start'}
+        return {'ok': False, 'error': '请确保 claude 命令可用'}
 
-    # agent_id 直接作为 runtime_id（openclaw agents list 中的注册名）
+    # agent_id 直接作为 runtime_id
     runtime_id = agent_id
     msg = message or f'🔔 系统心跳检测 — 请回复 OK 确认在线。当前时间: {now_iso()}'
 
     def do_wake():
         try:
-            cmd = ['openclaw', 'agent', '--agent', runtime_id, '-m', msg, '--timeout', '120']
+            cmd = ['claude', '-p', '--agent', runtime_id, msg]
             log.info(f'🔔 唤醒 {agent_id}...')
             # 带重试（最多2次）
             for attempt in range(1, 3):
@@ -1335,7 +1330,7 @@ def get_agent_activity(agent_id, limit=30, task_id=None):
     """从 Agent 的 session jsonl 读取最近活动。
     如果 task_id 不为空，只返回提及该 task_id 的相关条目。
     """
-    sessions_dir = OCLAW_HOME / 'agents' / agent_id / 'sessions'
+    sessions_dir = CLAUDE_HOME / 'agents' / agent_id / 'sessions'
     if not sessions_dir.exists():
         return []
 
@@ -1404,7 +1399,7 @@ def get_agent_activity_by_keywords(agent_id, keywords, limit=20):
     """从 agent session 中按关键词匹配获取活动条目。
     找到包含关键词的 session 文件，只读该文件的活动。
     """
-    sessions_dir = OCLAW_HOME / 'agents' / agent_id / 'sessions'
+    sessions_dir = CLAUDE_HOME / 'agents' / agent_id / 'sessions'
     if not sessions_dir.exists():
         return []
 
@@ -1490,7 +1485,7 @@ def get_agent_latest_segment(agent_id, limit=20):
     """获取 Agent 最新一轮对话段（最后一条 user 消息起的所有内容）。
     用于活跃任务没有精确匹配时，展示 Agent 的实时工作状态。
     """
-    sessions_dir = OCLAW_HOME / 'agents' / agent_id / 'sessions'
+    sessions_dir = CLAUDE_HOME / 'agents' / agent_id / 'sessions'
     if not sessions_dir.exists():
         return []
 
@@ -1956,8 +1951,7 @@ def dispatch_for_state(task_id, task, new_state, trigger='state-transition'):
                     'lastDispatchTrigger': trigger,
                 }))
                 return
-            cmd = ['openclaw', 'agent', '--agent', agent_id, '-m', msg,
-                   '--deliver', '--channel', 'feishu', '--timeout', '300']
+            cmd = ['claude', '-p', '--agent', agent_id, msg]
             max_retries = 2
             err = ''
             for attempt in range(1, max_retries + 1):

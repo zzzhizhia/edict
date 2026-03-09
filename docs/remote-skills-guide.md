@@ -46,7 +46,7 @@
   "skillName": "code_review",
   "agentId": "zhongshu",
   "source": "https://raw.githubusercontent.com/...",
-  "localPath": "/Users/bingsen/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md",
+  "localPath": "/Users/bingsen/.claude/agents/zhongshu.md/skills/code_review/SKILL.md",
   "size": 2048,
   "addedAt": "2026-03-02T14:30:00Z"
 }
@@ -75,7 +75,7 @@
       "agentId": "zhongshu",
       "sourceUrl": "https://raw.githubusercontent.com/org/skills-repo/main/code_review/SKILL.md",
       "description": "代码审查专项技能",
-      "localPath": "/Users/bingsen/.openclaw/workspace-zhongshu/skills/code_review/SKILL.md",
+      "localPath": "/Users/bingsen/.claude/agents/zhongshu.md/skills/code_review/SKILL.md",
       "lastUpdated": "2026-03-02T14:30:00Z",
       "status": "valid"  // valid | invalid | not-found
     }
@@ -159,20 +159,20 @@ python3 scripts/skill_manager.py remove-remote \
 
 ## 官方 Skills 库
 
-### OpenClaw Skills Hub
+### Claude Code Skills Hub
 
-> **官方 skills 库地址**: https://github.com/openclaw-ai/skills-hub
+> **官方 skills 库地址**: https://github.com/edict-ai/skills-hub
 
 可用 skills 列表：
 
 | Skill 名称 | 描述 | 适用 Agent | 源 URL |
 |-----------|------|----------|--------|
-| `code_review` | 代码审查（支持 Python/JS/Go） | 兵部/刑部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/code_review/SKILL.md |
-| `api_design` | API 设计审查 | 兵部/工部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/api_design/SKILL.md |
-| `security_audit` | 安全审计 | 刑部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/security_audit/SKILL.md |
-| `data_analysis` | 数据分析 | 户部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/data_analysis/SKILL.md |
-| `doc_generation` | 文档生成 | 礼部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/doc_generation/SKILL.md |
-| `test_framework` | 测试框架设计 | 工部/刑部 | https://raw.githubusercontent.com/openclaw-ai/skills-hub/main/test_framework/SKILL.md |
+| `code_review` | 代码审查（支持 Python/JS/Go） | 兵部/刑部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/code_review/SKILL.md |
+| `api_design` | API 设计审查 | 兵部/工部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/api_design/SKILL.md |
+| `security_audit` | 安全审计 | 刑部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/security_audit/SKILL.md |
+| `data_analysis` | 数据分析 | 户部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/data_analysis/SKILL.md |
+| `doc_generation` | 文档生成 | 礼部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/doc_generation/SKILL.md |
+| `test_framework` | 测试框架设计 | 工部/刑部 | https://raw.githubusercontent.com/edict-ai/skills-hub/main/test_framework/SKILL.md |
 
 **一键导入官方 skills**
 
@@ -246,7 +246,7 @@ tags: [tag1, tag2]
 name: code_review
 description: 对 Python/JavaScript 代码进行结构审查和优化建议
 version: 2.1.0
-author: openclaw-ai
+author: edict-ai
 tags: [code-quality, security, performance]
 compatibleAgents: [bingbu, xingbu, menxia]
 ---
@@ -310,8 +310,8 @@ compatibleAgents: [bingbu, xingbu, menxia]
 ### 本地存储结构
 
 ```
-~/.openclaw/
-├── workspace-zhongshu/
+~/.claude/
+├── agents/zhongshu/
 │   └── skills/
 │       ├── code_review/
 │       │   ├── SKILL.md
@@ -364,8 +364,8 @@ compatibleAgents: [bingbu, xingbu, menxia]
 
 ### 隔离执行
 
-- 远程 skills 在沙箱中执行（由 OpenClaw runtime 提供）
-- 无法访问 `~/.openclaw/config.json` 等敏感文件
+- 远程 skills 在沙箱中执行（由 Claude Code runtime 提供）
+- 无法访问 `~/.claude/settings.json` 等敏感文件
 - 只能访问分配的 workspace 目录
 
 ---
@@ -385,7 +385,7 @@ curl -I https://raw.githubusercontent.com/...
 
 A: 检查文件格式：
 ```bash
-python3 -m json.tool ~/.openclaw/workspace-zhongshu/skills/xxx/SKILL.md
+python3 -m json.tool ~/.claude/agents/zhongshu/skills/xxx/SKILL.md
 ```
 
 **Q: 能否从私有 GitHub 仓库导入？**
@@ -397,7 +397,7 @@ A: 不支持（安全考虑）。可以：
 
 **Q: 如何创建自己的 skills 库？**
 
-A: 参考 [OpenClaw Skills Hub](https://github.com/openclaw-ai/skills-hub) 的结构创建自己的仓库，然后：
+A: 参考 [Claude Code Skills Hub](https://github.com/edict-ai/skills-hub) 的结构创建自己的仓库，然后：
 
 ```bash
 git clone https://github.com/yourname/my-skills-hub.git
@@ -442,7 +442,7 @@ python3 scripts/skill_manager.py check-updates --interval weekly
 
 ### 5. 贡献社区
 
-成熟的 skills 可向 [OpenClaw Skills Hub](https://github.com/openclaw-ai/skills-hub) 贡献。
+成熟的 skills 可向 [Claude Code Skills Hub](https://github.com/edict-ai/skills-hub) 贡献。
 
 ---
 

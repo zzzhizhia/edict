@@ -4,22 +4,22 @@
 
 ---
 
-## 第一步：安装 OpenClaw
+## 第一步：安装 Claude Code
 
-三省六部基于 [OpenClaw](https://openclaw.ai) 运行，请先安装：
+三省六部基于 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 运行，请先安装：
 
 ```bash
-# macOS
-brew install openclaw
+# 安装 Claude Code
+npm install -g @anthropic-ai/claude-code
 
-# 或下载安装包
-# https://openclaw.ai/download
+# 参考官方文档
+# https://docs.anthropic.com/en/docs/claude-code
 ```
 
 安装完成后初始化：
 
 ```bash
-openclaw init
+claude
 ```
 
 ## 第二步：克隆并安装三省六部
@@ -31,9 +31,9 @@ chmod +x install.sh && ./install.sh
 ```
 
 安装脚本会自动完成：
-- ✅ 创建 12 个 Agent Workspace（`~/.openclaw/workspace-*`）
+- ✅ 创建 12 个 Agent 配置（`~/.claude/agents/*.md`）
 - ✅ 写入各省部 SOUL.md 人格文件
-- ✅ 注册 Agent 及权限矩阵到 `openclaw.json`
+- ✅ 注册 Agent 及权限矩阵到 `.claude/settings.json`
 - ✅ 配置旨意数据清洗规则
 - ✅ 构建 React 前端到 `dashboard/dist/`（需 Node.js 18+）
 - ✅ 初始化数据目录
@@ -42,17 +42,9 @@ chmod +x install.sh && ./install.sh
 
 ## 第三步：配置消息渠道
 
-在 OpenClaw 中配置消息渠道（Feishu / Telegram / Signal），将 `taizi`（太子）Agent 设为旨意入口。太子会自动分拣闲聊与指令，指令类消息提炼标题后转发中书省。
+在 Claude Code 中配置消息渠道（Feishu / Telegram / Signal），将 `taizi`（太子）Agent 设为旨意入口。太子会自动分拣闲聊与指令，指令类消息提炼标题后转发中书省。
 
-```bash
-# 查看当前渠道
-openclaw channels list
-
-# 添加飞书渠道（入口设为太子）
-openclaw channels add --type feishu --agent taizi
-```
-
-参考 OpenClaw 文档：https://docs.openclaw.ai/channels
+参考 Claude Code 文档：https://docs.anthropic.com/en/docs/claude-code
 
 ## 第四步：启动服务
 
@@ -136,11 +128,8 @@ python3 dashboard/server.py
 
 ### Agent 不响应
 ```bash
-# 检查 Gateway 状态
-openclaw gateway status
-
-# 必要时重启
-openclaw gateway restart
+# 检查 Claude Code 状态
+claude --version
 ```
 
 ### 数据不更新
@@ -155,17 +144,13 @@ python3 scripts/refresh_live_data.py
 ### 心跳显示红色 / 告警
 ```bash
 # 检查对应 Agent 的进程
-openclaw agent status <agent-id>
-
-# 重启指定 Agent
-openclaw agent restart <agent-id>
+claude -p --agent <agent-id> "status"
 ```
 
 ### 模型切换后不生效
 等待约 5 秒让 Gateway 重启完成。仍不生效则：
 ```bash
 python3 scripts/apply_model_changes.py
-openclaw gateway restart
 ```
 
 ---
@@ -175,5 +160,5 @@ openclaw gateway restart
 - [🏠 项目首页](https://github.com/cft0808/edict)
 - [📖 README](../README.md)
 - [🤝 贡献指南](../CONTRIBUTING.md)
-- [💬 OpenClaw 文档](https://docs.openclaw.ai)
+- [💬 Claude Code 文档](https://docs.anthropic.com/en/docs/claude-code)
 - [📮 公众号 · cft0808](wechat.md) — 架构拆解 / 踩坑复盘 / Token 省钱术

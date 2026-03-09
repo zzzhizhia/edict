@@ -14,7 +14,7 @@ BASE = pathlib.Path(__file__).resolve().parent.parent
 DATA = BASE / 'data'
 DATA.mkdir(exist_ok=True)
 SYNC_STATUS = DATA / 'sync_status.json'
-SESSIONS_ROOT = pathlib.Path.home() / '.openclaw' / 'agents'
+SESSIONS_ROOT = pathlib.Path.home() / '.claude' / 'projects'
 
 
 def write_status(**kwargs):
@@ -173,7 +173,7 @@ def build_task(agent_id, session_key, row, now_ms):
         title = f"{title_label}"
     
     return {
-        'id': f"OC-{agent_id}-{str(session_id)[:8]}",
+        'id': f"CC-{agent_id}-{str(session_id)[:8]}",
         'title': title,
         'official': official,
         'org': org,
@@ -187,7 +187,7 @@ def build_task(agent_id, session_key, row, now_ms):
             'review': f"updatedAt={ms_to_str(updated_at)}",
             'dispatch': f"sessionKey={session_key}",
         },
-        'ac': '来自 OpenClaw runtime sessions 的实时映射',
+        'ac': '来自 Claude Code sessions 的实时映射',
         'activity': load_activity(session_file, limit=10),
         'sourceMeta': {
             'agentId': agent_id,
@@ -327,13 +327,13 @@ def main():
             ok=True,
             lastSyncAt=now,
             durationMs=duration_ms,
-            source='openclaw_runtime_sessions',
+            source='claude_code_sessions',
             recordCount=len(tasks),
             scannedSessionFiles=scan_files,
             missingFields={},
             error=None,
         )
-        log.info(f'synced {len(tasks)} tasks from openclaw runtime in {duration_ms}ms')
+        log.info(f'synced {len(tasks)} tasks from claude code sessions in {duration_ms}ms')
 
     except Exception as e:
         duration_ms = int((time.time() - start) * 1000)
@@ -341,7 +341,7 @@ def main():
             ok=False,
             lastSyncAt=now,
             durationMs=duration_ms,
-            source='openclaw_runtime_sessions',
+            source='claude_code_sessions',
             recordCount=0,
             missingFields={},
             error=f'{type(e).__name__}: {e}',

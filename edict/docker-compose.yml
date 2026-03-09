@@ -90,7 +90,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://edict:edict_dev_2024@postgres:5432/edict
       REDIS_URL: redis://redis:6379/0
-      OPENCLAW_PROJECT_DIR: /app
+      CLAUDE_CODE_PROJECT_DIR: /app
     depends_on:
       postgres:
         condition: service_healthy
