@@ -2207,6 +2207,21 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({'ok': True, 'message': '订阅配置已保存'})
             return
 
+        if p == '/api/auto-dispatch':
+            task_id = body.get('taskId', '').strip()
+            new_state = body.get('newState', '').strip()
+            if not task_id or not new_state:
+                self.send_json({'ok': False, 'error': 'taskId and newState required'}, 400)
+                return
+            tasks = load_tasks()
+            task = next((t for t in tasks if t.get('id') == task_id), None)
+            if not task:
+                self.send_json({'ok': False, 'error': f'Task {task_id} not found'})
+                return
+            dispatch_for_state(task_id, task, new_state, trigger='agent-auto')
+            self.send_json({'ok': True, 'message': f'Auto-dispatch: {task_id} → {new_state}'})
+            return
+
         if p == '/api/scheduler-scan':
             threshold_sec = body.get('thresholdSec', 180)
             try:
