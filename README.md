@@ -8,6 +8,18 @@
   <sub>12 个 AI Agent（11 个业务角色 + 1 个兼容角色）组成三省六部：太子分拣、中书省规划、门下省审核封驳、尚书省派发、六部+吏部并行执行。<br>比 CrewAI 多一层<b>制度性审核</b>，比 AutoGen 多一个<b>实时看板</b>。</sub>
 </p>
 
+> **🔄 Edict Claude Code 版**
+>
+> 本分支已从 subprocess CLI 迁移到 **Claude Agent SDK** 驱动 Agent 执行。
+> Agent 事件（thinking / tool_use / text）实时流式推送到看板，无需轮询。
+>
+> 主要变化：
+> - Agent 执行引擎：`subprocess.run(['claude', ...])` → `AgentRunner` + Claude Agent SDK 流式事件
+> - 看板 → Backend 通信：subprocess 直调 → Admin API（dispatch / wake / cancel / active-agents）
+> - Agent 配置：`agents/<id>/SOUL.md` → `~/.claude/agents/edict/<name>.md`（标准 YAML frontmatter）
+> - 精确 token/cost 追踪：`UsageTracker` 实时记录每次调用
+> - 一键启停：`make start` / `make stop`
+
 <p align="center">
   <a href="#-demo">🎬 看 Demo</a> ·
   <a href="#-30-秒快速体验">🚀 30 秒体验</a> ·
@@ -19,13 +31,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Claude_Code-Required-blue?style=flat-square" alt="Claude Code">
-  <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Claude_Agent_SDK-Powered-blue?style=flat-square" alt="Claude Agent SDK">
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Agents-12_Specialized-8B5CF6?style=flat-square" alt="Agents">
   <img src="https://img.shields.io/badge/Dashboard-Real--time-F59E0B?style=flat-square" alt="Dashboard">
   <img src="https://img.shields.io/badge/License-MIT-22C55E?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Frontend-React_18-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/Backend-stdlib_only-EC4899?style=flat-square" alt="Zero Backend Dependencies">
+  <img src="https://img.shields.io/badge/Backend-FastAPI+Redis-EC4899?style=flat-square" alt="FastAPI Backend">
 </p>
 
 <p align="center">
