@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 三省六部 · 看板本地 API 服务器
-Port: 7891 (可通过 --port 修改)
+Port: 17891 (可通过 --port 修改)
 
 Endpoints:
   GET  /                       → dashboard.html
@@ -29,7 +29,7 @@ CLAUDE_HOME = pathlib.Path.home() / '.claude'
 MAX_REQUEST_BODY = 1 * 1024 * 1024  # 1 MB
 ALLOWED_ORIGIN = None  # Set via --cors; None means restrict to localhost
 _DEFAULT_ORIGINS = {
-    'http://127.0.0.1:7891', 'http://localhost:7891',
+    'http://127.0.0.1:17891', 'http://localhost:17891',
     'http://127.0.0.1:5173', 'http://localhost:5173',  # Vite dev server
 }
 _SAFE_NAME_RE = re.compile(r'^[a-zA-Z0-9_\-\u4e00-\u9fff]+$')
@@ -72,7 +72,7 @@ def cors_headers(h):
     elif req_origin in _DEFAULT_ORIGINS:
         origin = req_origin
     else:
-        origin = 'http://127.0.0.1:7891'
+        origin = 'http://127.0.0.1:17891'
     h.send_header('Access-Control-Allow-Origin', origin)
     h.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     h.send_header('Access-Control-Allow-Headers', 'Content-Type')
@@ -513,7 +513,7 @@ def push_to_feishu():
             'header': {'title': {'tag': 'plain_text', 'content': f'📰 天下要闻 · {date_fmt}'}, 'template': 'blue'},
             'elements': [
                 {'tag': 'div', 'text': {'tag': 'lark_md', 'content': f'共 **{total}** 条要闻已更新\n{summary}'}},
-                {'tag': 'action', 'actions': [{'tag': 'button', 'text': {'tag': 'plain_text', 'content': '🔗 查看完整简报'}, 'url': 'http://127.0.0.1:7891', 'type': 'primary'}]},
+                {'tag': 'action', 'actions': [{'tag': 'button', 'text': {'tag': 'plain_text', 'content': '🔗 查看完整简报'}, 'url': 'http://127.0.0.1:17891', 'type': 'primary'}]},
                 {'tag': 'note', 'elements': [{'tag': 'plain_text', 'content': f"采集于 {brief.get('generated_at', '')}"}]}
             ]
         }
@@ -2434,7 +2434,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description='三省六部看板服务器')
-    parser.add_argument('--port', type=int, default=7891)
+    parser.add_argument('--port', type=int, default=17891)
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--cors', default=None, help='Allowed CORS origin (default: reflect request Origin header)')
     args = parser.parse_args()

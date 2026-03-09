@@ -77,7 +77,7 @@ while true; do
   SCAN_COUNTER=$((SCAN_COUNTER + INTERVAL))
   if (( SCAN_COUNTER >= SCAN_INTERVAL )); then
     SCAN_COUNTER=0
-    curl -s -X POST http://127.0.0.1:7891/api/scheduler-scan \
+    curl -s -X POST http://127.0.0.1:17891/api/scheduler-scan \
       -H 'Content-Type: application/json' -d '{"thresholdSec":180}' >> "$LOG" 2>&1 || true
   fi
 

@@ -10,9 +10,11 @@ data/tasks.json
 data/bitable_source.json
 data/mission_control_tasks.json
 
-# Logs
+# Logs & PID files
 *.log
 /tmp/
+logs/
+.pids/
 
 # Python
 __pycache__/
