@@ -39,7 +39,7 @@ class DispatchWorker:
         self._running = False
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._active_tasks: dict[str, asyncio.Task] = {}
-        self._agent_runner = agent_runner
+        self._agent_runner: AgentRunner | None = agent_runner
 
     async def start(self):
         await self.bus.connect()
@@ -117,6 +117,7 @@ class DispatchWorker:
             )
 
             try:
+                assert self._agent_runner is not None, "AgentRunner not initialized"
                 settings = get_settings()
                 result = await self._agent_runner.run_agent(
                     agent_id=agent,

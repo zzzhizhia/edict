@@ -21,12 +21,25 @@ log = logging.getLogger("edict.agent_runner")
 # SDK availability flag — graceful degradation to subprocess if unavailable
 _SDK_AVAILABLE = False
 try:
-    from claude_agent_sdk import query, ClaudeAgentOptions
-    from claude_agent_sdk.types import StreamEvent, ResultMessage
+    from claude_agent_sdk import query as _sdk_query, ClaudeAgentOptions as _SDKOptions
+    from claude_agent_sdk.types import StreamEvent as _StreamEvent, ResultMessage as _ResultMessage
     _SDK_AVAILABLE = True
     log.info("Claude Agent SDK loaded successfully")
 except ImportError:
     log.warning("claude-agent-sdk not installed, falling back to subprocess mode")
+
+    # Stubs for type checker — never used at runtime when SDK unavailable
+    class _SDKOptions:  # type: ignore[no-redef]
+        def __init__(self, **kwargs): ...
+    class _StreamEvent:  # type: ignore[no-redef]
+        event: dict
+    class _ResultMessage:  # type: ignore[no-redef]
+        usage: dict | None = None
+        total_cost_usd: float | None = None
+
+    async def _sdk_query(**kwargs):  # type: ignore[no-redef]
+        raise RuntimeError("SDK not available")
+        yield  # noqa: unreachable — makes it an async generator for type checker
 
 
 @dataclass
@@ -126,7 +139,7 @@ class AgentRunner:
         start_time = time.monotonic()
         output_parts: list[str] = []
 
-        options = ClaudeAgentOptions(
+        options = _SDKOptions(
             system_prompt=agent_cfg.system_prompt,
             model=agent_cfg.model,
             allowed_tools=agent_cfg.allowed_tools,
@@ -148,12 +161,12 @@ class AgentRunner:
 
         result = AgentResult(success=True, model=agent_cfg.model)
 
-        async for msg in query(prompt=message, options=options):
+        async for msg in _sdk_query(prompt=message, options=options):
             if session.cancelled:
                 log.info(f"Agent '{session.agent_id}' session cancelled, breaking stream")
                 break
 
-            if isinstance(msg, StreamEvent):
+            if isinstance(msg, _StreamEvent):
                 event = msg.event
                 event_type = event.get("type", "")
 
@@ -203,7 +216,7 @@ class AgentRunner:
                             },
                         )
 
-            elif isinstance(msg, ResultMessage):
+            elif isinstance(msg, _ResultMessage):
                 usage = msg.usage or {}
                 result.input_tokens = usage.get("input_tokens", 0)
                 result.output_tokens = usage.get("output_tokens", 0)

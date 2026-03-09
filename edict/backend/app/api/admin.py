@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from ..db import get_db
-from ..services.event_bus import get_event_bus, TOPIC_TASK_DISPATCH
+from ..services.event_bus import get_event_bus
 
 log = logging.getLogger("edict.api.admin")
 router = APIRouter()
@@ -36,7 +36,7 @@ class CancelAgentRequest(BaseModel):
 @router.get("/health/deep")
 async def deep_health(db: AsyncSession = Depends(get_db)):
     """深度健康检查：Postgres + Redis 连通性。"""
-    checks = {"postgres": False, "redis": False}
+    checks: dict[str, object] = {"postgres": False, "redis": False}
 
     # Postgres
     try:
