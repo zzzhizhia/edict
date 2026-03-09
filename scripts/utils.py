@@ -19,11 +19,6 @@ def now_iso():
     return datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
 
 
-def today_str(fmt='%Y%m%d'):
-    """返回今天日期字符串，默认 YYYYMMDD"""
-    return datetime.date.today().strftime(fmt)
-
-
 def safe_name(s: str) -> bool:
     """检查名称是否只含安全字符（字母、数字、下划线、连字符、中文）"""
     import re

@@ -7,27 +7,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INTERVAL="${1:-15}"
 LOG="/tmp/sansheng_liubu_refresh.log"
-PIDFILE="/tmp/sansheng_liubu_refresh.pid"
 MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB
 
-# ── 单实例保护 ──
-if [[ -f "$PIDFILE" ]]; then
-  OLD_PID=$(cat "$PIDFILE" 2>/dev/null)
-  if kill -0 "$OLD_PID" 2>/dev/null; then
-    echo "❌ 已有实例运行中 (PID=$OLD_PID)，退出"
-    exit 1
-  fi
-  rm -f "$PIDFILE"
-fi
-echo $$ > "$PIDFILE"
-
-# ── 优雅退出 ──
-cleanup() {
-  echo "$(date '+%H:%M:%S') [loop] 收到退出信号，清理中..." >> "$LOG"
-  rm -f "$PIDFILE"
-  exit 0
-}
-trap cleanup SIGINT SIGTERM EXIT
+# 注意：单实例保护由 Makefile tmux 会话管理，此处不再使用 PID 文件
 
 # ── 日志轮转 ──
 rotate_log() {
@@ -47,7 +29,6 @@ echo "   间隔: ${INTERVAL}s"
 echo "   巡检间隔: ${SCAN_INTERVAL}s"
 echo "   脚本超时: ${SCRIPT_TIMEOUT}s"
 echo "   日志: $LOG"
-echo "   PID文件: $PIDFILE"
 echo "   按 Ctrl+C 停止"
 
 # ── 安全执行（带超时保护）──

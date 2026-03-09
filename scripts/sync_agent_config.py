@@ -47,14 +47,6 @@ KNOWN_MODELS = [
 ]
 
 
-def normalize_model(model_value, fallback='unknown'):
-    if isinstance(model_value, str) and model_value:
-        return model_value
-    if isinstance(model_value, dict):
-        return model_value.get('primary') or model_value.get('id') or fallback
-    return fallback
-
-
 def get_skills(workspace: str):
     skills_dir = pathlib.Path(workspace) / 'skills'
     skills = []

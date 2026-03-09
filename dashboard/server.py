@@ -2028,12 +2028,12 @@ def handle_advance_state(task_id, comment=''):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args):
+    def log_message(self, format, *args):  # noqa: A002
         # 只记录 4xx/5xx 错误请求
         if args and len(args) >= 1:
             status = str(args[0]) if args else ''
             if status.startswith('4') or status.startswith('5'):
-                log.warning(f'{self.client_address[0]} {fmt % args}')
+                log.warning(f'{self.client_address[0]} {format % args}')
 
     def handle_error(self):
         pass  # 静默处理连接错误，避免 BrokenPipe 崩溃

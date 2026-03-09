@@ -77,49 +77,51 @@ def get_model(agent_id):
                 return normalize_model(a.get('model', default), default)
     return default
 
-def scan_agent_from_usage_log(agent_id):
-    """从 UsageTracker 产出的 usage_log.jsonl 读取精确 token/cost 数据。"""
-    if not USAGE_LOG.exists():
-        return None
-    tin = tout = cr = cw = 0
-    cost = 0.0
-    call_count = 0
-    last_ts = None
+def _load_usage_index():
+    """读取 usage_log.jsonl 一次，按 agent_id 构建索引。"""
+    index = {}
     try:
-        for line in USAGE_LOG.read_text(errors='ignore').splitlines():
-            try:
-                entry = json.loads(line)
-            except Exception:
-                continue
-            if entry.get('agent_id') != agent_id:
-                continue
-            tin += entry.get('input_tokens', 0) or 0
-            tout += entry.get('output_tokens', 0) or 0
-            cr += entry.get('cache_read_tokens', 0) or 0
-            cw += entry.get('cache_write_tokens', 0) or 0
-            cost += entry.get('cost_usd', 0) or 0
-            call_count += 1
-            ts_str = entry.get('timestamp')
-            if ts_str:
-                try:
-                    t = datetime.datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
-                    if last_ts is None or t > last_ts:
-                        last_ts = t
-                except Exception:
-                    pass
+        text = USAGE_LOG.read_text(errors='ignore')
     except Exception:
-        return None
+        return index
+    for line in text.splitlines():
+        try:
+            entry = json.loads(line)
+        except Exception:
+            continue
+        aid = entry.get('agent_id', '')
+        if aid not in index:
+            index[aid] = {'tin': 0, 'tout': 0, 'cr': 0, 'cw': 0, 'cost': 0.0, 'count': 0, 'last_ts': None}
+        rec = index[aid]
+        rec['tin'] += entry.get('input_tokens', 0) or 0
+        rec['tout'] += entry.get('output_tokens', 0) or 0
+        rec['cr'] += entry.get('cache_read_tokens', 0) or 0
+        rec['cw'] += entry.get('cache_write_tokens', 0) or 0
+        rec['cost'] += entry.get('cost_usd', 0) or 0
+        rec['count'] += 1
+        ts_str = entry.get('timestamp')
+        if ts_str:
+            try:
+                t = datetime.datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                if rec['last_ts'] is None or t > rec['last_ts']:
+                    rec['last_ts'] = t
+            except Exception:
+                pass
+    return index
 
-    if call_count == 0:
-        return None
 
+def scan_agent_from_usage_log(agent_id, usage_index):
+    """从预加载的 usage_index 中提取指定 agent 的统计数据。"""
+    rec = usage_index.get(agent_id)
+    if not rec or rec['count'] == 0:
+        return None
     return {
-        'tokens_in': tin, 'tokens_out': tout,
-        'cache_read': cr, 'cache_write': cw,
-        'sessions': call_count,
-        'last_active': last_ts.strftime('%Y-%m-%d %H:%M') if last_ts else None,
-        'messages': call_count,
-        'cost_usd_precise': round(cost, 4),
+        'tokens_in': rec['tin'], 'tokens_out': rec['tout'],
+        'cache_read': rec['cr'], 'cache_write': rec['cw'],
+        'sessions': rec['count'],
+        'last_active': rec['last_ts'].strftime('%Y-%m-%d %H:%M') if rec['last_ts'] else None,
+        'messages': rec['count'],
+        'cost_usd_precise': round(rec['cost'], 4),
     }
 
 
@@ -210,17 +212,18 @@ def main():
     live  = rj(DATA/'live_status.json', {})
     live_tasks = live.get('tasks', [])
 
+    usage_index = _load_usage_index()
     result = []
     for off in OFFICIALS:
         model   = get_model(off['id'])
         # Prefer precise data from UsageTracker, fallback to session scanning
-        ss_precise = scan_agent_from_usage_log(off['id'])
+        ss_precise = scan_agent_from_usage_log(off['id'], usage_index)
         ss_legacy  = scan_agent(off['id'])
         ss = ss_precise if ss_precise else ss_legacy
         ts      = get_task_stats(off['label'], tasks)
         hb      = get_hb(off['id'], live_tasks)
         # Use precise cost if available, otherwise estimate from token counts
-        cost_usd = ss.get('cost_usd_precise') if ss.get('cost_usd_precise') else calc_cost(ss, model)
+        cost_usd = ss.get('cost_usd_precise') or calc_cost(ss, model)
 
         result.append({
             **off,

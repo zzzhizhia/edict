@@ -181,6 +181,8 @@ def _fallback_json():
     if old_path.exists():
         import importlib.util
         spec = importlib.util.spec_from_file_location('kanban_legacy', old_path)
+        if spec is None or spec.loader is None:
+            return None
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         return mod

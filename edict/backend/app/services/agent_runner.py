@@ -29,6 +29,7 @@ except ImportError:
 
     # Stubs for type checker — never used at runtime when SDK unavailable
     class _SDKOptions:  # type: ignore[no-redef]
+        system_prompt: str | None
         def __init__(self, **kwargs): ...
     class _StreamEvent:  # type: ignore[no-redef]
         event: dict
