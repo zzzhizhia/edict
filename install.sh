@@ -195,24 +195,26 @@ build_frontend() {
   fi
 }
 
-# ── Step 5: 安装 Skill ──────────────────────────────────────
+# ── Step 5: 安装 Skills ─────────────────────────────────────
 install_skill() {
-  info "安装 edict skill 到 ~/.claude/skills/edict/ ..."
+  info "安装 edict skills..."
 
-  SKILL_SRC="$REPO_DIR/skills/edict"
-  SKILL_DST="$CLAUDE_HOME/skills/edict"
+  for skill in edict edict-help; do
+    SKILL_SRC="$REPO_DIR/skills/$skill"
+    SKILL_DST="$CLAUDE_HOME/skills/$skill"
 
-  if [ -d "$SKILL_SRC" ]; then
-    mkdir -p "$SKILL_DST"
-    if [ -f "$SKILL_DST/SKILL.md" ]; then
-      cp "$SKILL_DST/SKILL.md" "$SKILL_DST/SKILL.md.bak.$(date +%Y%m%d-%H%M%S)"
-      warn "已备份旧 skill → SKILL.md.bak.*"
+    if [ -d "$SKILL_SRC" ]; then
+      mkdir -p "$SKILL_DST"
+      if [ -f "$SKILL_DST/SKILL.md" ]; then
+        cp "$SKILL_DST/SKILL.md" "$SKILL_DST/SKILL.md.bak.$(date +%Y%m%d-%H%M%S)"
+        warn "已备份旧 skill → $skill/SKILL.md.bak.*"
+      fi
+      cp "$SKILL_SRC/SKILL.md" "$SKILL_DST/SKILL.md"
+      log "Skill 已安装: ~/.claude/skills/$skill/SKILL.md"
+    else
+      warn "未找到 skills/$skill/，跳过"
     fi
-    cp "$SKILL_SRC/SKILL.md" "$SKILL_DST/SKILL.md"
-    log "Skill 已安装: ~/.claude/skills/edict/SKILL.md"
-  else
-    warn "未找到 skills/edict/，跳过 skill 安装"
-  fi
+  done
 }
 
 # ── Step 6: 首次数据同步 ────────────────────────────────────
