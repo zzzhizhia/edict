@@ -2092,7 +2092,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         p = urlparse(self.path).path.rstrip('/')
         if p in ('', '/dashboard', '/dashboard.html'):
-            self.send_file(DIST / 'index.html')
+            idx = DIST / 'index.html'
+            if idx.exists():
+                self.send_file(idx)
+            else:
+                self.send_file(BASE / 'dashboard.html')
         elif p == '/healthz':
             checks = {'dataDir': DATA.is_dir(), 'tasksReadable': (DATA / 'tasks_source.json').exists()}
             checks['dataWritable'] = os.access(str(DATA), os.W_OK)
@@ -2137,6 +2141,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(read_skill_content(parts[0], parts[1]))
             else:
                 self.send_json({'ok': False, 'error': 'Usage: /api/skill-content/{agentId}/{skillName}'}, 400)
+        elif p.startswith('/api/output/'):
+            task_id = p.replace('/api/output/', '')
+            if not task_id or not _SAFE_NAME_RE.match(task_id):
+                self.send_json({'ok': False, 'error': 'invalid task_id'}, 400)
+            else:
+                output_file = DATA / 'outputs' / f'{task_id}.md'
+                if output_file.is_file():
+                    content = output_file.read_text(encoding='utf-8')
+                    self.send_json({'ok': True, 'taskId': task_id, 'content': content})
+                else:
+                    self.send_json({'ok': False, 'error': f'output not found: {task_id}'}, 404)
         elif p.startswith('/api/task-activity/'):
             task_id = p.replace('/api/task-activity/', '')
             if not task_id:
@@ -2160,11 +2175,15 @@ class Handler(BaseHTTPRequestHandler):
         elif self._serve_static(p):
             pass  # 已由 _serve_static 处理 (JS/CSS/图片等)
         else:
-            # SPA fallback：非 /api/ 路径返回 index.html
+            # SPA fallback：非 /api/ 路径返回 index.html（或 dashboard.html）
             if not p.startswith('/api/'):
                 idx = DIST / 'index.html'
                 if idx.exists():
                     self.send_file(idx)
+                    return
+                fallback = BASE / 'dashboard.html'
+                if fallback.exists():
+                    self.send_file(fallback)
                     return
             self.send_error(404)
 

@@ -12,7 +12,10 @@
   # 添加流转记录
   python3 kanban_update.py flow JJC-20260223-012 "中书省" "门下省" "规划方案提交审核"
 
-  # 完成任务
+  # 完成任务（推荐：stdin 传入产出内容）
+  echo "# 报告内容" | python3 kanban_update.py done JJC-20260223-012 --summary "任务完成摘要"
+
+  # 完成任务（旧方式：位置参数）
   python3 kanban_update.py done JJC-20260223-012 "/path/to/output" "任务完成摘要"
 
   # 添加/更新子任务 todo
@@ -265,7 +268,32 @@ def cmd_flow(task_id, from_dept, to_dept, remark):
 
 
 def cmd_done(task_id, output_path='', summary=''):
-    """标记任务完成（原子操作）"""
+    """标记任务完成（原子操作）
+
+    支持通过 stdin 传入完整产出内容，自动写入 data/outputs/{task_id}.md：
+      echo "# 报告内容" | python3 kanban_update.py done JJC-xxx --summary "摘要"
+
+    也兼容旧方式（位置参数）：
+      python3 kanban_update.py done JJC-xxx "/path/to/output" "摘要"
+    """
+    # 从 stdin 读取产出内容（如果有管道输入）
+    stdin_content = ''
+    try:
+        if not sys.stdin.isatty():
+            import select
+            if select.select([sys.stdin], [], [], 0)[0]:
+                stdin_content = sys.stdin.read().strip()
+    except Exception:
+        pass
+
+    if stdin_content:
+        outputs_dir = _BASE / 'data' / 'outputs'
+        outputs_dir.mkdir(parents=True, exist_ok=True)
+        output_file = outputs_dir / f'{task_id}.md'
+        output_file.write_text(stdin_content, encoding='utf-8')
+        output_path = f'outputs/{task_id}.md'
+        log.info(f'📦 产出物已保存: {output_file}')
+
     def modifier(tasks):
         t = find_task(tasks, task_id)
         if not t:
@@ -450,7 +478,20 @@ if __name__ == '__main__':
     elif cmd == 'flow':
         cmd_flow(args[1], args[2], args[3], args[4])
     elif cmd == 'done':
-        cmd_done(args[1], args[2] if len(args)>2 else '', args[3] if len(args)>3 else '')
+        # 解析可选 --summary 参数
+        done_pos = []
+        done_summary = ''
+        di = 1
+        while di < len(args):
+            if args[di] == '--summary' and di + 1 < len(args):
+                done_summary = args[di + 1]; di += 2
+            else:
+                done_pos.append(args[di]); di += 1
+        cmd_done(
+            done_pos[0] if len(done_pos) > 0 else '',
+            done_pos[1] if len(done_pos) > 1 else '',
+            done_summary or (done_pos[2] if len(done_pos) > 2 else ''),
+        )
     elif cmd == 'block':
         cmd_block(args[1], args[2])
     elif cmd == 'todo':

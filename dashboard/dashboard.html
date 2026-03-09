@@ -2890,7 +2890,7 @@ function openMemorial(jsonStr){
 
     ${t.output&&t.output!=='-'?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
       <div style="font-size:11px;font-weight:600;margin-bottom:4px">📦 产出物</div>
-      <code style="font-size:11px;word-break:break-all">${esc(t.output)}</code>
+      ${t.output.includes('outputs/')?`<div id="output-content" style="font-size:12px;color:var(--muted);padding:8px 0">加载中...</div>`:`<code style="font-size:11px;word-break:break-all">${esc(t.output)}</code>`}
     </div>`:''}
 
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
@@ -2898,6 +2898,25 @@ function openMemorial(jsonStr){
     </div>
   `;
   document.getElementById('modal-bg').classList.add('open');
+
+  // 异步加载产出物内容
+  if(t.output && t.output.includes('outputs/')){
+    fetch('/api/output/'+encodeURIComponent(t.id))
+      .then(r=>r.json())
+      .then(d=>{
+        const el=document.getElementById('output-content');
+        if(!el) return;
+        if(d.ok && d.content){
+          el.innerHTML='<pre style="white-space:pre-wrap;font-size:12px;line-height:1.6;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;max-height:400px;overflow-y:auto">'+esc(d.content)+'</pre>';
+        } else {
+          el.textContent='产出物文件不存在';
+        }
+      })
+      .catch(()=>{
+        const el=document.getElementById('output-content');
+        if(el) el.textContent='加载失败';
+      });
+  }
 }
 
 function exportMemorial(taskIdJson){

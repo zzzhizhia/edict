@@ -120,7 +120,7 @@ register_agents() {
 init_data() {
   info "初始化数据目录..."
 
-  mkdir -p "$REPO_DIR/data"
+  mkdir -p "$REPO_DIR/data" "$REPO_DIR/data/outputs"
 
   # 初始化空文件
   for f in live_status.json agent_config.json model_change_log.json; do
