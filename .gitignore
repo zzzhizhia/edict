@@ -1,5 +1,6 @@
 # Runtime data
 data/
+reports/
 
 # Logs
 *.log
