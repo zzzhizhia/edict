@@ -746,8 +746,8 @@ def _check_agent_process(agent_id):
 
 
 def _check_agent_workspace(agent_id):
-    """检查 Agent 配置文件是否存在。"""
-    agent_md = CLAUDE_HOME / 'agents' / f'{agent_id}.md'
+    """检查 Agent 配置文件是否存在: ~/.claude/agents/edict/<id>.md"""
+    agent_md = CLAUDE_HOME / 'agents' / 'edict' / f'{agent_id}.md'
     return agent_md.is_file()
 
 

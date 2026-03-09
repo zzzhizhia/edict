@@ -9,7 +9,7 @@ from fastapi import APIRouter
 log = logging.getLogger("edict.api.agents")
 router = APIRouter()
 
-# Agent 元信息（对应 agents/ 目录下的 SOUL.md）
+# Agent 元信息（对应 ~/.claude/agents/edict/<id>.md）
 AGENT_META = {
     "zaochao": {"name": "早朝（朝会主持）", "role": "朝会召集与议程管理", "icon": "🏛️"},
     "shangshu": {"name": "尚书令", "role": "总协调与任务监督", "icon": "📜"},
@@ -42,8 +42,8 @@ async def get_agent(agent_id: str):
     if not meta:
         return {"error": f"Agent '{agent_id}' not found"}, 404
 
-    # 尝试读取 SOUL.md
-    soul_path = Path(__file__).parents[4] / "agents" / agent_id / "SOUL.md"
+    # 读取 agent 配置文件: ~/.claude/agents/edict/<id>.md
+    soul_path = Path.home() / ".claude" / "agents" / "edict" / f"{agent_id}.md"
     soul_content = ""
     if soul_path.exists():
         soul_content = soul_path.read_text(encoding="utf-8")[:2000]

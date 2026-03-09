@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message
 # Auto-detect project root (parent of scripts/)
 BASE = pathlib.Path(__file__).parent.parent
 DATA = BASE / 'data'
-CLAUDE_AGENTS_DIR = pathlib.Path.home() / '.claude' / 'agents'
+CLAUDE_AGENTS_DIR = pathlib.Path.home() / '.claude' / 'agents' / 'edict'
 
 ID_LABEL = {
     'taizi':    {'label': '太子',   'role': '太子',     'duty': '飞书消息分拣与回奏',  'emoji': '🤴'},

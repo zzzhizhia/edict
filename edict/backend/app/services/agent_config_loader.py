@@ -1,4 +1,4 @@
-"""Agent 配置加载器 — 从 SOUL.md 和 ~/.claude/settings.json 解析 Agent 配置。"""
+"""Agent 配置加载器 — 从 ~/.claude/agents/edict/<id>.md 和 settings.json 解析 Agent 配置。"""
 
 import json
 import logging
@@ -7,7 +7,8 @@ from pathlib import Path
 
 log = logging.getLogger("edict.agent_config")
 
-AGENTS_DIR = Path(__file__).resolve().parents[4] / "agents"
+# Claude Code agent 命名规范：~/.claude/agents/edict/<name>.md
+AGENTS_DIR = Path.home() / ".claude" / "agents" / "edict"
 CLAUDE_SETTINGS = Path.home() / ".claude" / "settings.json"
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
@@ -26,11 +27,11 @@ class AgentConfig:
 
 
 class AgentConfigLoader:
-    """从 agents/<id>/SOUL.md + ~/.claude/settings.json 加载 Agent 配置。"""
+    """从 ~/.claude/agents/edict/<id>.md + settings.json 加载 Agent 配置。"""
 
     def __init__(self, agents_dir: Path | None = None):
         self._agents_dir = agents_dir or AGENTS_DIR
-        self._claude_settings: dict | None = None
+        self._claude_settings: dict = {}
 
     def load(self, agent_id: str) -> AgentConfig:
         soul = self._load_soul(agent_id)
@@ -42,11 +43,12 @@ class AgentConfigLoader:
         )
 
     def _load_soul(self, agent_id: str) -> str:
-        soul_path = self._agents_dir / agent_id / "SOUL.md"
-        if not soul_path.exists():
-            log.warning(f"SOUL.md not found for agent '{agent_id}': {soul_path}")
+        # Claude Code 单文件 agent 格式: <name>.md
+        agent_md = self._agents_dir / f"{agent_id}.md"
+        if not agent_md.exists():
+            log.warning(f"Agent file not found: {agent_md}")
             return ""
-        content = soul_path.read_text(encoding="utf-8")
+        content = agent_md.read_text(encoding="utf-8")
         # Strip YAML frontmatter if present
         if content.startswith("---"):
             parts = content.split("---", 2)
@@ -70,7 +72,7 @@ class AgentConfigLoader:
         return default
 
     def _load_claude_settings(self) -> dict:
-        if self._claude_settings is not None:
+        if self._claude_settings:
             return self._claude_settings
         try:
             self._claude_settings = json.loads(CLAUDE_SETTINGS.read_text())
