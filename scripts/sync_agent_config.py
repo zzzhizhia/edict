@@ -133,12 +133,12 @@ _SOUL_DEPLOY_MAP = {
 }
 
 def deploy_agent_files():
-    """将项目 agents/xxx/SOUL.md 部署到 ~/.claude/agents/{runtime_id}.md"""
+    """将项目 agents/<name>.md 部署到 ~/.claude/agents/edict/<name>.md"""
     agents_dir = BASE / 'agents'
     CLAUDE_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     deployed = 0
     for proj_name, runtime_id in _SOUL_DEPLOY_MAP.items():
-        src = agents_dir / proj_name / 'SOUL.md'
+        src = agents_dir / f'{proj_name}.md'
         if not src.exists():
             continue
         dst = CLAUDE_AGENTS_DIR / f'{runtime_id}.md'

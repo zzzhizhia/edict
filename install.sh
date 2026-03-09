@@ -68,37 +68,27 @@ backup_existing() {
   fi
 }
 
-# ── Step 1: 创建 Agent 配置 ──────────────────────────────────
+# ── Step 1: 安装 Agent 配置 ──────────────────────────────────
 create_workspaces() {
-  info "创建 Agent 配置..."
+  info "安装 Agent 配置到 ~/.claude/agents/edict/ ..."
 
-  AGENTS_DIR="$CLAUDE_HOME/agents"
+  AGENTS_DIR="$CLAUDE_HOME/agents/edict"
   mkdir -p "$AGENTS_DIR"
 
   AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
   for agent in "${AGENTS[@]}"; do
-    if [ -f "$REPO_DIR/agents/$agent/SOUL.md" ]; then
-      AGENT_MD="$AGENTS_DIR/$agent.md"
-      if [ -f "$AGENT_MD" ]; then
-        # 已存在的配置，先备份再覆盖
-        cp "$AGENT_MD" "$AGENT_MD.bak.$(date +%Y%m%d-%H%M%S)"
-        warn "已备份旧配置 → $AGENT_MD.bak.*"
+    SRC="$REPO_DIR/agents/$agent.md"
+    if [ -f "$SRC" ]; then
+      DST="$AGENTS_DIR/$agent.md"
+      if [ -f "$DST" ]; then
+        cp "$DST" "$DST.bak.$(date +%Y%m%d-%H%M%S)"
+        warn "已备份旧配置 → $DST.bak.*"
       fi
-
-      # 生成 agent .md 文件（frontmatter + SOUL.md 内容）
-      SOUL_CONTENT=$(sed "s|__REPO_DIR__|$REPO_DIR|g" "$REPO_DIR/agents/$agent/SOUL.md")
-      cat > "$AGENT_MD" << AGENT_EOF
----
-name: ${agent}
-description: 三省六部 ${agent} agent
-tools: Read, Grep, Glob, Bash, Edit, Write
-model: sonnet
----
-
-${SOUL_CONTENT}
-AGENT_EOF
+      cp "$SRC" "$DST"
+      log "Agent 已安装: edict/$agent.md"
+    else
+      warn "源文件不存在: agents/$agent.md"
     fi
-    log "Agent 配置已创建: $AGENTS_DIR/$agent.md"
   done
 }
 
@@ -106,23 +96,23 @@ AGENT_EOF
 register_agents() {
   info "确认三省六部 Agents 配置..."
 
-  AGENTS_DIR="$CLAUDE_HOME/agents"
+  AGENTS_DIR="$CLAUDE_HOME/agents/edict"
   AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
 
   all_ok=true
   for agent in "${AGENTS[@]}"; do
     if [ -f "$AGENTS_DIR/$agent.md" ]; then
-      log "  ✓ $agent.md"
+      log "  ✓ edict/$agent.md"
     else
-      warn "  ✗ $agent.md 未找到"
+      warn "  ✗ edict/$agent.md 未找到"
       all_ok=false
     fi
   done
 
   if $all_ok; then
-    log "所有 Agent 配置已就位"
+    log "所有 Agent 配置已就位 (~/.claude/agents/edict/)"
   else
-    warn "部分 Agent 配置缺失，请检查 agents/ 目录下的 SOUL.md 文件"
+    warn "部分 Agent 配置缺失，请检查 agents/ 目录下的 .md 文件"
   fi
 }
 
