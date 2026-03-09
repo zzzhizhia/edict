@@ -10,15 +10,16 @@
 
 > **🔄 Edict Claude Code 版**
 >
-> 本分支已从 subprocess CLI 迁移到 **Claude Agent SDK** 驱动 Agent 执行。
-> Agent 事件（thinking / tool_use / text）实时流式推送到看板，无需轮询。
+> 本分支已从 OpenClaw 平台迁移到 **Claude Code** 生态。
+> Agent 通过 Claude Agent SDK 流式执行，事件（thinking / tool_use / text）实时推送到看板，无需轮询。
 >
-> 主要变化：
-> - Agent 执行引擎：`subprocess.run(['claude', ...])` → `AgentRunner` + Claude Agent SDK 流式事件
-> - 看板 → Backend 通信：subprocess 直调 → Admin API（dispatch / wake / cancel / active-agents）
-> - Agent 配置：`agents/<id>/SOUL.md` → `~/.claude/agents/edict/<name>.md`（标准 YAML frontmatter）
-> - 精确 token/cost 追踪：`UsageTracker` 实时记录每次调用
-> - 一键启停：`make start` / `make stop`
+> 与 OpenClaw 版的主要区别：
+> - **运行时平台**：OpenClaw Runtime → Claude Code + Claude Agent SDK
+> - **Agent 执行**：OpenClaw 调度器 → `AgentRunner` 流式事件驱动
+> - **Agent 配置**：OpenClaw Agent YAML → `~/.claude/agents/edict/<name>.md`（Claude Code 标准格式）
+> - **数据同步**：轮询 session JSONL → Agent SDK 事件实时流入 EventBus
+> - **Token 追踪**：估算 → `UsageTracker` 精确记录每次调用的 token/cost
+> - **一键启停**：`make start` / `make stop`
 
 <p align="center">
   <a href="#-demo">🎬 看 Demo</a> ·
