@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -29,9 +30,12 @@ class AgentConfig:
 class AgentConfigLoader:
     """从 ~/.claude/agents/edict/<id>.md + settings.json 加载 Agent 配置。"""
 
+    _SETTINGS_TTL = 30  # seconds
+
     def __init__(self, agents_dir: Path | None = None):
         self._agents_dir = agents_dir or AGENTS_DIR
         self._claude_settings: dict = {}
+        self._settings_loaded_at: float = 0
 
     def load(self, agent_id: str) -> AgentConfig:
         soul = self._load_soul(agent_id)
@@ -72,12 +76,14 @@ class AgentConfigLoader:
         return default
 
     def _load_claude_settings(self) -> dict:
-        if self._claude_settings:
+        now = time.monotonic()
+        if self._claude_settings and (now - self._settings_loaded_at) < self._SETTINGS_TTL:
             return self._claude_settings
         try:
             self._claude_settings = json.loads(CLAUDE_SETTINGS.read_text())
         except Exception:
             self._claude_settings = {}
+        self._settings_loaded_at = now
         return self._claude_settings
 
     @staticmethod

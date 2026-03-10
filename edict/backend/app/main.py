@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     usage_tracker = UsageTracker()
     agent_runner = AgentRunner(usage_tracker=usage_tracker, config=settings)
     app.state.agent_runner = agent_runner
+    app.state.dispatch_results = {}
     log.info("✅ AgentRunner initialized")
 
     yield

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -46,29 +47,58 @@ def _get_runner(request: Request):
     return runner
 
 
+def _get_dispatch_results(request: Request) -> dict:
+    """获取 dispatch_results 字典，不存在则初始化。"""
+    results = getattr(request.app.state, "dispatch_results", None)
+    if results is None:
+        request.app.state.dispatch_results = {}
+        results = request.app.state.dispatch_results
+    return results
+
+
 @router.post("/dispatch")
 async def dispatch_agent(body: DispatchRequest, request: Request):
-    """Dashboard 触发 Agent 派发 — 通过 Agent SDK 异步执行。"""
+    """Dashboard 触发 Agent 派发 — 通过 Agent SDK 异步执行（fire-and-forget）。"""
     runner = _get_runner(request)
+    dispatch_results = _get_dispatch_results(request)
     trace_id = f"admin-{body.task_id}"
+
+    dispatch_results[body.task_id] = {
+        "status": "queued",
+        "agent_id": body.agent_id,
+        "queued_at": time.time(),
+    }
 
     async def _run():
         try:
+            dispatch_results[body.task_id]["status"] = "running"
             result = await runner.run_agent(
                 agent_id=body.agent_id,
                 message=body.message,
                 task_id=body.task_id,
                 trace_id=trace_id,
             )
+            dispatch_results[body.task_id].update({
+                "status": "success" if result.success else "failed",
+                "output": result.output[:500],
+                "cost_usd": result.cost_usd,
+                "duration_ms": result.duration_ms,
+                "finished_at": time.time(),
+            })
             log.info(
                 f"Dispatch complete: {body.task_id} → {body.agent_id} "
                 f"success={result.success} cost=${result.cost_usd:.4f}"
             )
         except Exception as e:
+            dispatch_results[body.task_id].update({
+                "status": "error",
+                "error": str(e),
+                "finished_at": time.time(),
+            })
             log.error(f"Dispatch error: {body.task_id} → {body.agent_id}: {e}")
 
     asyncio.create_task(_run())
-    return {"ok": True, "message": f"Dispatch queued: {body.task_id} → {body.agent_id}"}
+    return {"ok": True, "async": True, "message": f"Dispatch queued: {body.task_id} → {body.agent_id}"}
 
 
 @router.post("/wake-agent")
@@ -92,6 +122,17 @@ async def wake_agent(body: WakeAgentRequest, request: Request):
 
     asyncio.create_task(_run())
     return {"ok": True, "message": f"{body.agent_id} 唤醒指令已发出"}
+
+
+@router.get("/dispatch-status/{task_id}")
+async def dispatch_status(task_id: str, request: Request):
+    """查询异步 dispatch 任务的执行状态。"""
+    _require_localhost(request)
+    dispatch_results = _get_dispatch_results(request)
+    entry = dispatch_results.get(task_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"No dispatch record for task_id={task_id}")
+    return {"ok": True, "task_id": task_id, **entry}
 
 
 @router.post("/cancel-agent")

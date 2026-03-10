@@ -5,7 +5,7 @@ import type { Task, FlowEntry } from '../api';
 export default function MemorialPanel() {
   const liveStatus = useStore((s) => s.liveStatus);
   const [filter, setFilter] = useState('all');
-  const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const toast = useStore((s) => s.toast);
 
   const tasks = liveStatus?.tasks || [];
@@ -67,7 +67,7 @@ export default function MemorialPanel() {
             const lastAt = fl.length ? (fl[fl.length - 1].at || '').substring(0, 16).replace('T', ' ') : '';
             const stIcon = t.state === 'Done' ? '✅' : '🚫';
             return (
-              <div className="mem-card" key={t.id} onClick={() => setDetailTask(t)}>
+              <div className="mem-card" key={t.id} onClick={() => setDetailTaskId(t.id)}>
                 <div className="mem-icon">📜</div>
                 <div className="mem-info">
                   <div className="mem-title">
@@ -93,9 +93,12 @@ export default function MemorialPanel() {
       </div>
 
       {/* Detail Modal */}
-      {detailTask && (
-        <MemorialDetailModal task={detailTask} onClose={() => setDetailTask(null)} onExport={exportMemorial} />
-      )}
+      {(() => {
+        const detailTask = detailTaskId ? tasks.find((t) => t.id === detailTaskId) || null : null;
+        return detailTask ? (
+          <MemorialDetailModal task={detailTask} onClose={() => setDetailTaskId(null)} onExport={exportMemorial} />
+        ) : null;
+      })()}
     </div>
   );
 }

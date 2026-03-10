@@ -7,3 +7,4 @@ EDICT_HOME = pathlib.Path(
 )
 DATA = EDICT_HOME / 'data'
 SCRIPTS = EDICT_HOME / 'scripts'
+REPORTS = EDICT_HOME / 'reports'

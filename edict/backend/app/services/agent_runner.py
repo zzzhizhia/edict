@@ -7,9 +7,8 @@
 import asyncio
 import logging
 import os
-import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..config import get_settings
 from .agent_config_loader import AgentConfigLoader
@@ -63,6 +62,7 @@ class _ActiveSession:
     trace_id: str
     started_at: float
     cancelled: bool = False
+    process: asyncio.subprocess.Process | None = field(default=None, repr=False)
 
 
 class AgentRunner:
@@ -86,16 +86,22 @@ class AgentRunner:
         """执行 Agent 调用。"""
         session_key = f"{agent_id}:{task_id}"
 
-        async with self._semaphore:
-            session = _ActiveSession(
-                agent_id=agent_id,
-                task_id=task_id,
-                trace_id=trace_id,
-                started_at=time.monotonic(),
-            )
-            self._active[session_key] = session
+        # 在等待 semaphore 之前就注册 session，让排队中的任务也能被 cancel 找到
+        session = _ActiveSession(
+            agent_id=agent_id,
+            task_id=task_id,
+            trace_id=trace_id,
+            started_at=time.monotonic(),
+        )
+        self._active[session_key] = session
 
-            try:
+        try:
+            async with self._semaphore:
+                # 拿到 semaphore 后检查是否在排队期间已被取消
+                if session.cancelled:
+                    log.info(f"Agent '{agent_id}' was cancelled while queued for task {task_id}")
+                    return AgentResult(success=False, output="CANCELLED (while queued)", return_code=-2)
+
                 if _SDK_AVAILABLE:
                     result = await asyncio.wait_for(
                         self._run_sdk(session, message),
@@ -103,7 +109,7 @@ class AgentRunner:
                     )
                 else:
                     result = await self._run_subprocess(
-                        agent_id, message, task_id, trace_id, timeout
+                        session, message, timeout
                     )
 
                 # Record usage
@@ -123,14 +129,18 @@ class AgentRunner:
 
                 return result
 
-            except asyncio.TimeoutError:
-                log.error(f"Agent '{agent_id}' timed out after {timeout}s for task {task_id}")
-                return AgentResult(success=False, output=f"TIMEOUT after {timeout}s", return_code=-1)
-            except asyncio.CancelledError:
-                log.info(f"Agent '{agent_id}' cancelled for task {task_id}")
-                return AgentResult(success=False, output="CANCELLED", return_code=-2)
-            finally:
-                self._active.pop(session_key, None)
+        except asyncio.TimeoutError:
+            log.error(f"Agent '{agent_id}' timed out after {timeout}s for task {task_id}")
+            if session.process and session.process.returncode is None:
+                session.process.terminate()
+            return AgentResult(success=False, output=f"TIMEOUT after {timeout}s", return_code=-1)
+        except asyncio.CancelledError:
+            log.info(f"Agent '{agent_id}' cancelled for task {task_id}")
+            if session.process and session.process.returncode is None:
+                session.process.terminate()
+            return AgentResult(success=False, output="CANCELLED", return_code=-2)
+        finally:
+            self._active.pop(session_key, None)
 
     async def _run_sdk(self, session: _ActiveSession, message: str) -> AgentResult:
         """通过 Claude Agent SDK 执行 Agent。"""
@@ -189,42 +199,64 @@ class AgentRunner:
 
     async def _run_subprocess(
         self,
-        agent_id: str,
+        session: _ActiveSession,
         message: str,
-        task_id: str,
-        trace_id: str,
         timeout: int,
     ) -> AgentResult:
-        """降级路径：通过 subprocess 调用 Claude CLI（SDK 不可用时）。"""
+        """降级路径：通过 async subprocess 调用 Claude CLI（SDK 不可用时）。
+
+        使用 asyncio.create_subprocess_exec 代替 subprocess.run，
+        支持 cancel 时真正 kill 子进程。
+        """
         settings = self._config
         claude_bin = settings.claude_code_bin or "claude"
-        cmd = [claude_bin, "-p", "--agent", agent_id, message]
+        cmd = [claude_bin, "-p", "--agent", session.agent_id, message]
 
         env = os.environ.copy()
-        env["EDICT_TASK_ID"] = task_id
-        env["EDICT_TRACE_ID"] = trace_id
+        env["EDICT_TASK_ID"] = session.task_id
+        env["EDICT_TRACE_ID"] = session.trace_id
         env["EDICT_API_URL"] = f"http://localhost:{settings.port}"
 
         start_time = time.monotonic()
+        proc: asyncio.subprocess.Process | None = None
 
-        def _run():
-            try:
-                proc = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                    env=env,
-                    cwd=settings.claude_code_project_dir or None,
-                )
-                return proc.returncode, proc.stdout or "", proc.stderr or ""
-            except subprocess.TimeoutExpired:
-                return -1, "", f"TIMEOUT after {timeout}s"
-            except FileNotFoundError:
-                return -1, "", "claude command not found"
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=settings.claude_code_project_dir or None,
+            )
+            session.process = proc
 
-        loop = asyncio.get_event_loop()
-        rc, stdout, _stderr = await loop.run_in_executor(None, _run)
+            stdout_bytes, _ = await asyncio.wait_for(
+                proc.communicate(), timeout=timeout
+            )
+            rc = proc.returncode or 0
+            stdout = (stdout_bytes or b"").decode(errors="replace")
+
+        except asyncio.TimeoutError:
+            if proc and proc.returncode is None:
+                proc.terminate()
+                try:
+                    await asyncio.wait_for(proc.wait(), timeout=5)
+                except asyncio.TimeoutError:
+                    proc.kill()
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            return AgentResult(
+                success=False,
+                output=f"TIMEOUT after {timeout}s",
+                return_code=-1,
+                duration_ms=duration_ms,
+            )
+        except FileNotFoundError:
+            return AgentResult(
+                success=False,
+                output="claude command not found",
+                return_code=-1,
+                duration_ms=0,
+            )
 
         duration_ms = int((time.monotonic() - start_time) * 1000)
         return AgentResult(
@@ -235,11 +267,13 @@ class AgentRunner:
         )
 
     async def cancel(self, agent_id: str, task_id: str) -> bool:
-        """取消正在执行的 Agent。"""
+        """取消正在执行的 Agent — 标记取消 + kill 子进程。"""
         session_key = f"{agent_id}:{task_id}"
         session = self._active.get(session_key)
         if session:
             session.cancelled = True
+            if session.process and session.process.returncode is None:
+                session.process.terminate()
             log.info(f"Cancellation requested for {session_key}")
             return True
         return False

@@ -8,7 +8,8 @@ export default function CourtCeremony() {
 
   useEffect(() => {
     const lastOpen = localStorage.getItem('edict_court_date');
-    const today = new Date().toISOString().substring(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const pref = JSON.parse(localStorage.getItem('edict_court_pref') || '{"enabled":true}');
     if (!pref.enabled || lastOpen === today) return;
     localStorage.setItem('edict_court_date', today);

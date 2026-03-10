@@ -17,7 +17,7 @@ function useAgentMaps() {
 }
 
 function extractAgent(t: Task): string {
-  const m = (t.id || '').match(/^OC-(\w+)-/);
+  const m = (t.id || '').match(/^(?:OC|MC)-(\w+)-/);
   if (m) return m[1];
   return (t.org || '').replace(/省|部/g, '').toLowerCase();
 }
@@ -65,7 +65,7 @@ export default function SessionsPanel() {
   const sessFilter = useStore((s) => s.sessFilter);
   const setSessFilter = useStore((s) => s.setSessFilter);
   const { emojiMap, labelMap } = useAgentMaps();
-  const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
   const tasks = liveStatus?.tasks || [];
   const sessions = tasks.filter((t) => !isEdict(t));
@@ -84,7 +84,7 @@ export default function SessionsPanel() {
         {[
           { key: 'all', label: `全部 (${sessions.length})` },
           { key: 'active', label: '活跃' },
-          ...agentIds.slice(0, 8).map((id) => ({ key: id, label: labelMap[id] || id })),
+          ...agentIds.map((id) => ({ key: id, label: labelMap[id] || id })),
         ].map((f) => (
           <span
             key={f.key}
@@ -113,12 +113,12 @@ export default function SessionsPanel() {
             const msg = lastMessage(t);
             const sm = t.sourceMeta || {};
             const totalTk = (sm as Record<string, unknown>).totalTokens as number | undefined;
-            const updatedAt = t.eta || '';
+            const updatedAt = t.updatedAt || t.eta || '';
             const hbDot = hb.status === 'active' ? '🟢' : hb.status === 'warn' ? '🟡' : hb.status === 'stalled' ? '🔴' : '⚪';
             const st = t.state || 'Unknown';
 
             return (
-              <div className="sess-card" key={t.id} onClick={() => setDetailTask(t)}>
+              <div className="sess-card" key={t.id} onClick={() => setDetailTaskId(t.id)}>
                 <div className="sc-top">
                   <span className="sc-emoji">{emoji}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -151,9 +151,12 @@ export default function SessionsPanel() {
       </div>
 
       {/* Session Detail Modal */}
-      {detailTask && (
-        <SessionDetailModal task={detailTask} labelMap={labelMap} emojiMap={emojiMap} onClose={() => setDetailTask(null)} />
-      )}
+      {(() => {
+        const detailTask = detailTaskId ? tasks.find((t) => t.id === detailTaskId) || null : null;
+        return detailTask ? (
+          <SessionDetailModal task={detailTask} labelMap={labelMap} emojiMap={emojiMap} onClose={() => setDetailTaskId(null)} />
+        ) : null;
+      })()}
     </div>
   );
 }
