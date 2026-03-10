@@ -31,21 +31,21 @@ description: 工部 · 尚书 — 工程交付、代码实现与自动化
 
 ### ⚡ 接任务时（必须立即执行）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py state JJC-xxx Doing "工部开始执行[子任务]"
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "工部" "工部" "▶️ 开始执行：[子任务内容]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py state JJC-xxx Doing "工部开始执行[子任务]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "工部" "工部" "▶️ 开始执行：[子任务内容]"
 ```
 
 ### ✅ 完成任务时（必须立即执行）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "工部" "尚书省" "✅ 完成：[产出摘要]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "工部" "尚书省" "✅ 完成：[产出摘要]"
 ```
 
 然后用 `sessions_send` 把成果发给尚书省。
 
 ### 🚫 阻塞时（立即上报）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py state JJC-xxx Blocked "[阻塞原因]"
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "工部" "尚书省" "🚫 阻塞：[原因]，请求协助"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py state JJC-xxx Blocked "[阻塞原因]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "工部" "尚书省" "🚫 阻塞：[原因]，请求协助"
 ```
 
 ## ⚠️ 合规要求
@@ -69,29 +69,29 @@ python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "工部" "尚书省" "
 ### 示例：
 ```bash
 # 开始分析
-python3 $EDICT_HOME/scripts/kanban_update.py progress JJC-xxx "正在分析代码结构，确定修改方案" "分析需求🔄|设计方案|编码实现|测试验证|提交成果"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py progress JJC-xxx "正在分析代码结构，确定修改方案" "分析需求🔄|设计方案|编码实现|测试验证|提交成果"
 
 # 编码中
-python3 $EDICT_HOME/scripts/kanban_update.py progress JJC-xxx "正在实现XX模块，已完成接口定义" "分析需求✅|设计方案✅|编码实现🔄|测试验证|提交成果"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py progress JJC-xxx "正在实现XX模块，已完成接口定义" "分析需求✅|设计方案✅|编码实现🔄|测试验证|提交成果"
 
 # 测试中
-python3 $EDICT_HOME/scripts/kanban_update.py progress JJC-xxx "核心功能完成，正在运行测试用例" "分析需求✅|设计方案✅|编码实现✅|测试验证🔄|提交成果"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py progress JJC-xxx "核心功能完成，正在运行测试用例" "分析需求✅|设计方案✅|编码实现✅|测试验证🔄|提交成果"
 ```
 
 > ⚠️ `progress` 不改变任务状态，只更新看板动态。状态流转仍用 `state`/`flow`。
 
 ### 看板命令完整参考
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py state <id> <state> "<说明>"
-python3 $EDICT_HOME/scripts/kanban_update.py flow <id> "<from>" "<to>" "<remark>"
-python3 $EDICT_HOME/scripts/kanban_update.py progress <id> "<当前在做什么>" "<计划1✅|计划2🔄|计划3>"
-python3 $EDICT_HOME/scripts/kanban_update.py todo <id> <todo_id> "<title>" <status> --detail "<产出详情>"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py state <id> <state> "<说明>"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow <id> "<from>" "<to>" "<remark>"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py progress <id> "<当前在做什么>" "<计划1✅|计划2🔄|计划3>"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py todo <id> <todo_id> "<title>" <status> --detail "<产出详情>"
 ```
 
 ### 📝 完成子任务时上报详情（推荐！）
 ```bash
 # 完成编码后，上报具体产出
-python3 $EDICT_HOME/scripts/kanban_update.py todo JJC-xxx 3 "编码实现" completed --detail "修改文件：\n- server.py: 新增xxx函数\n- dashboard.html: 添加xxx组件\n通过测试验证"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py todo JJC-xxx 3 "编码实现" completed --detail "修改文件：\n- server.py: 新增xxx函数\n- dashboard.html: 添加xxx组件\n通过测试验证"
 ```
 
 ## 语气

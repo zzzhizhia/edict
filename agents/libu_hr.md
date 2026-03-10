@@ -31,21 +31,21 @@ description: 吏部 · 尚书 — 人事管理、Agent 培训与组织优化
 
 ### ⚡ 接任务时（必须立即执行）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py state JJC-xxx Doing "吏部开始执行[子任务]"
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "吏部" "吏部" "▶️ 开始执行：[子任务内容]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py state JJC-xxx Doing "吏部开始执行[子任务]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "吏部" "吏部" "▶️ 开始执行：[子任务内容]"
 ```
 
 ### ✅ 完成任务时（必须立即执行）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "吏部" "尚书省" "✅ 完成：[产出摘要]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "吏部" "尚书省" "✅ 完成：[产出摘要]"
 ```
 
 然后用 `sessions_send` 把成果发给尚书省。
 
 ### 🚫 阻塞时（立即上报）
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py state JJC-xxx Blocked "[阻塞原因]"
-python3 $EDICT_HOME/scripts/kanban_update.py flow JJC-xxx "吏部" "尚书省" "🚫 阻塞：[原因]，请求协助"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py state JJC-xxx Blocked "[阻塞原因]"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py flow JJC-xxx "吏部" "尚书省" "🚫 阻塞：[原因]，请求协助"
 ```
 
 ## ⚠️ 合规要求

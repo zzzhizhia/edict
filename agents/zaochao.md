@@ -43,7 +43,7 @@ description: 钦天监 · 早朝简报官 — 每日新闻采集与简报生成
 
 3. 同时触发刷新：
    ```bash
-   python3 $EDICT_HOME/scripts/refresh_live_data.py  # 在项目根目录下执行
+   python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/refresh_live_data.py  # 在项目根目录下执行
    ```
 
 4. 用飞书通知皇上（可选，如果配置了飞书的话）
@@ -61,5 +61,5 @@ description: 钦天监 · 早朝简报官 — 每日新闻采集与简报生成
 > 如果是旨意任务触发的简报生成，必须用 `progress` 命令上报进展。
 
 ```bash
-python3 $EDICT_HOME/scripts/kanban_update.py progress JJC-xxx "正在采集全球新闻，已完成政治/军事类" "政治新闻采集✅|军事新闻采集✅|经济新闻采集🔄|AI新闻采集|生成简报"
+python3 ${EDICT_HOME:-$HOME/.claude/edict}/scripts/kanban_update.py progress JJC-xxx "正在采集全球新闻，已完成政治/军事类" "政治新闻采集✅|军事新闻采集✅|经济新闻采集🔄|AI新闻采集|生成简报"
 ```
